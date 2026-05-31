@@ -34,6 +34,174 @@
       "achievements": [
         "Account Registered"
       ]
+    },
+    {
+      "id": "u-d4ci7xi",
+      "name": "Google Learner",
+      "email": "google-1780234281765@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "GOO2789",
+      "points": 25,
+      "badges": [
+        "Google Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:31:21.765Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "google-linked"
+    },
+    {
+      "id": "u-mwvipcy",
+      "name": "Apple Learner",
+      "email": "apple-1780234291809@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "APP1425",
+      "points": 25,
+      "badges": [
+        "Apple Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:31:31.809Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "apple-linked"
+    },
+    {
+      "id": "u-f8o40lf",
+      "name": "Google User",
+      "email": "google-1780234847023@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "GOO7997",
+      "points": 20,
+      "badges": [
+        "Google Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:40:47.024Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "google-linked"
+    },
+    {
+      "id": "u-k8nxt1a",
+      "name": "Google User",
+      "email": "google-1780234848903@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "GOO8064",
+      "points": 20,
+      "badges": [
+        "Google Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:40:48.904Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "google-linked"
+    },
+    {
+      "id": "u-d9lexm3",
+      "name": "Google User",
+      "email": "google-1780234870430@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "GOO4785",
+      "points": 20,
+      "badges": [
+        "Google Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:41:10.431Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "google-linked"
+    },
+    {
+      "id": "u-tqsmzpz",
+      "name": "Google User",
+      "email": "google-1780234871975@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "GOO4424",
+      "points": 20,
+      "badges": [
+        "Google Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:41:11.976Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "google-linked"
+    },
+    {
+      "id": "u-u41hadl",
+      "name": "Phone User 0000",
+      "email": "phone-9800000000@rawthink.ai",
+      "phone": "9800000000",
+      "role": "student",
+      "referralCode": "PH8241",
+      "points": 15,
+      "badges": [
+        "Phone Verified"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T13:41:17.877Z",
+      "achievements": [
+        "Phone Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "233157"
+    },
+    {
+      "id": "u-td48z7l",
+      "name": "Apple User",
+      "email": "apple-1780237848638@rawthink.ai",
+      "phone": "",
+      "role": "student",
+      "referralCode": "APP2285",
+      "points": 20,
+      "badges": [
+        "Apple Connect"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-31T14:30:48.642Z",
+      "achievements": [
+        "Social Login"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "apple-linked"
     }
   ],
   "courses": [

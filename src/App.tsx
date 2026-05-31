@@ -448,6 +448,7 @@ export default function App() {
               onPaymentDecision={handlePaymentDecision}
               onPostAnnouncement={() => {}}
               onIssueManualCert={handleManualCertIssued}
+              onScheduleChange={(updatedSchedule) => setSchedule(updatedSchedule)}
               studentsList={studentsList}
               tools={tools}
               onToolsChange={(updatedTools) => setTools(updatedTools)}

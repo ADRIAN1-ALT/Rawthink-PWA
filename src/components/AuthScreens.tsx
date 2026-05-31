@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../types';
-import { Mail, Lock, Phone, User as UserIcon, Sparkles, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, X, ExternalLink } from 'lucide-react';
+import { Mail, Lock, Phone, User as UserIcon, Sparkles, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, X, ExternalLink, Apple, Globe2, Smartphone } from 'lucide-react';
 
 interface AuthScreensProps {
   onLoginSuccess: (user: User) => void;
@@ -23,6 +23,13 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
 
   // Loader state
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
+
+  // Phone sign-in state
+  const [phoneLoginVisible, setPhoneLoginVisible] = useState(false);
+  const [phoneLoginNumber, setPhoneLoginNumber] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   // Simulated Gmail Overlay state
   const [simulatedEmail, setSimulatedEmail] = useState<{
@@ -32,6 +39,60 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
     body: string;
     nextActionUser?: User;
   } | null>(null);
+
+  const handleOAuthSignIn = (provider: 'google' | 'apple') => {
+    const uri = provider === 'google' ? '/auth/google' : '/auth/apple';
+    window.location.href = uri;
+  };
+
+  const handlePhoneSendOtp = async () => {
+    if (!phoneLoginNumber.trim()) {
+      showNotification('Please enter a phone number before requesting OTP.', 'error');
+      return;
+    }
+
+    setSocialLoading(true);
+    try {
+      const resp = await fetch('/api/auth/phone/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneLoginNumber.trim() })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'OTP request failed.');
+      setOtpSent(true);
+      showNotification(data.message || `OTP sent to ${phoneLoginNumber}.`, 'success');
+    } catch (err: any) {
+      showNotification(err.message || 'OTP request error', 'error');
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const handlePhoneVerify = async () => {
+    if (!phoneLoginNumber.trim() || !otpCode.trim()) {
+      showNotification('Phone number and OTP are both required.', 'error');
+      return;
+    }
+
+    setSocialLoading(true);
+    try {
+      const resp = await fetch('/api/auth/phone/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneLoginNumber.trim(), otp: otpCode.trim() })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Phone login failed.');
+      onLoginSuccess(data.user);
+      showNotification('Phone sign-in successful! Welcome to RAWTHINK AI.', 'success');
+      setView('dashboard');
+    } catch (err: any) {
+      showNotification(err.message || 'Phone login error', 'error');
+    } finally {
+      setSocialLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +259,98 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
         {/* LOGIN FORM */}
         {activeTab === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-brand-primary font-bold">Sign in with modern access</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignIn('google')}
+                  disabled={socialLoading}
+                  className="flex items-center justify-center gap-2 py-2 rounded-xl border border-brand-primary/20 bg-white text-brand-dark text-[11px] font-semibold hover:border-brand-primary hover:bg-brand-cream/70"
+                >
+                  <Globe2 size={16} />
+                  Google
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignIn('apple')}
+                  disabled={socialLoading}
+                  className="flex items-center justify-center gap-2 py-2 rounded-xl border border-brand-primary/20 bg-white text-brand-dark text-[11px] font-semibold hover:border-brand-primary hover:bg-brand-cream/70"
+                >
+                  <Apple size={16} />
+                  Apple
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhoneLoginVisible(true);
+                    setOtpSent(false);
+                    setOtpCode('');
+                  }}
+                  disabled={socialLoading}
+                  className="flex items-center justify-center gap-2 py-2 rounded-xl border border-brand-primary/20 bg-white text-brand-dark text-[11px] font-semibold hover:border-brand-primary hover:bg-brand-cream/70"
+                >
+                  <Smartphone size={16} />
+                  Phone
+                </button>
+              </div>
+              {phoneLoginVisible && (
+                <div className="space-y-3 p-3 rounded-2xl border border-brand-primary/15 bg-brand-cream/30">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      placeholder="98XXXXXXXX"
+                      value={phoneLoginNumber}
+                      onChange={(e) => setPhoneLoginNumber(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-brand-primary/20 bg-white text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-2 flex-col sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={handlePhoneSendOtp}
+                      className="flex-1 py-2.5 rounded-xl bg-brand-primary text-white text-[11px] font-bold hover:bg-brand-primary/95"
+                    >
+                      {otpSent ? 'Resend OTP' : 'Send OTP'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhoneLoginVisible(false);
+                        setPhoneLoginNumber('');
+                        setOtpSent(false);
+                        setOtpCode('');
+                      }}
+                      className="flex-1 py-2.5 rounded-xl border border-brand-primary/20 text-brand-dark text-[11px] font-semibold bg-white hover:bg-brand-cream/70"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {otpSent && (
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark">OTP Code</label>
+                      <input
+                        type="text"
+                        placeholder="123456"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-brand-primary/20 bg-white text-xs font-semibold focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handlePhoneVerify}
+                        disabled={socialLoading}
+                        className="w-full py-2.5 rounded-xl bg-brand-dark text-white text-[11px] font-bold hover:bg-brand-dark/95"
+                      >
+                        {socialLoading ? 'Verifying...' : 'Verify Phone'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-brand-dark mb-1 uppercase tracking-wider">Email Address</label>
               <div className="relative">
@@ -238,15 +391,6 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
             </div>
 
             {/* Helper tips displaying default sandbox logins for ease of UI testers */}
-            <div className="bg-brand-cream/35 rounded-lg p-2.5 text-[10px] text-brand-dark space-y-0.5 border border-brand-primary/5">
-              <p className="font-bold flex items-center space-x-1">
-                <ShieldCheck size={11} className="text-brand-primary" />
-                <span>Tester Sandbox Portals (Autocreated):</span>
-              </p>
-              <p>• Student: <span className="font-mono bg-white px-1 border">student@gmail.com</span> (any password)</p>
-              <p>• Administrator: <span className="font-mono bg-white px-1 border ml-1">admin@rawthink.ai</span> (any password)</p>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -327,7 +471,7 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
             {/* Optional invite code logic */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-bold text-brand-primary uppercase tracking-wide flex items-center space-x-1">
+                <label className="text-xs font-bold text-brand-primary uppercase tracking-wide flex items-center space-x-1">
                   <Sparkles size={11} />
                   <span>Referral Invitation Code</span>
                 </label>

@@ -19,12 +19,13 @@ interface AdminPanelProps {
   studentsList: User[];
   tools: AITool[];
   onToolsChange: (updatedTools: AITool[]) => void;
+  onScheduleChange?: (schedule: SessionSchedule[]) => void;
 }
 
 export default function AdminPanel({
   currentUser, courses, schedule, enrollments, showNotification, 
   onPaymentDecision, onPostAnnouncement, onIssueManualCert, studentsList,
-  tools = [], onToolsChange
+  onScheduleChange, tools = [], onToolsChange
 }: AdminPanelProps) {
   
   // States
@@ -47,6 +48,16 @@ export default function AdminPanel({
 
   // Active view tabs of Admin panel
   const [activeSubTab, setActiveSubTab] = useState<'analytics' | 'payments' | 'classes' | 'announcements' | 'exporter' | 'tools'>('analytics');
+
+  // Schedule Manager State
+  const [scheduleSessionId, setScheduleSessionId] = useState<string>('');
+  const [scheduleCourse, setScheduleCourse] = useState<string>(courses[0]?.id || '');
+  const [scheduleTitle, setScheduleTitle] = useState('');
+  const [scheduleInstructor, setScheduleInstructor] = useState('');
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('10:00 AM');
+  const [scheduleSeats, setScheduleSeats] = useState(30);
+  const [isScheduling, setIsScheduling] = useState(false);
 
   // Tools CRUD States
   const [editingTool, setEditingTool] = useState<AITool | null>(null);
@@ -73,6 +84,12 @@ export default function AdminPanel({
   useEffect(() => {
     fetchAdminStats();
   }, [enrollments]);
+
+  useEffect(() => {
+    if (!scheduleCourse && courses.length > 0) {
+      setScheduleCourse(courses[0].id);
+    }
+  }, [courses, scheduleCourse]);
 
   if (!currentUser || currentUser.role !== 'admin') {
     return (
@@ -167,6 +184,92 @@ export default function AdminPanel({
     } catch (e: any) {
       showNotification(e.message || 'Issue failed', 'error');
     }
+  };
+
+  const cancelScheduleEdit = () => {
+    setScheduleSessionId('');
+    setScheduleTitle('');
+    setScheduleInstructor('');
+    setScheduleDate('');
+    setScheduleTime('10:00 AM');
+    setScheduleSeats(30);
+    setScheduleCourse(courses[0]?.id || '');
+  };
+
+  const handleScheduleSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleTitle.trim() || !scheduleInstructor.trim() || !scheduleDate.trim() || !scheduleTime.trim() || !scheduleCourse) {
+      showNotification('All schedule fields are required.', 'error');
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      const payload = {
+        courseId: scheduleCourse,
+        workshopName: scheduleTitle.trim(),
+        instructor: scheduleInstructor.trim(),
+        date: scheduleDate,
+        time: scheduleTime,
+        totalSeats: scheduleSeats
+      };
+
+      const endpoint = scheduleSessionId ? `/api/schedule/${scheduleSessionId}` : '/api/schedule';
+      const method = scheduleSessionId ? 'PUT' : 'POST';
+      const resp = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || 'Could not save schedule session.');
+      }
+
+      showNotification(`Workshop schedule ${scheduleSessionId ? 'updated' : 'created'} successfully!`, 'success');
+      cancelScheduleEdit();
+      if (onScheduleChange) {
+        onScheduleChange(data.schedule);
+      }
+    } catch (err: any) {
+      showNotification(err.message || 'Schedule save failed.', 'error');
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const handleDeleteSchedule = async (sessionId: string) => {
+    if (!window.confirm('Delete this schedule session now? This is permanent.')) {
+      return;
+    }
+
+    try {
+      const resp = await fetch(`/api/schedule/${sessionId}`, { method: 'DELETE' });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || 'Delete failed.');
+      }
+      showNotification('Schedule session deleted successfully.', 'success');
+      if (onScheduleChange) {
+        onScheduleChange(data.schedule);
+      }
+      if (scheduleSessionId === sessionId) {
+        cancelScheduleEdit();
+      }
+    } catch (err: any) {
+      showNotification(err.message || 'Schedule delete error.', 'error');
+    }
+  };
+
+  const startScheduleEdit = (session: SessionSchedule) => {
+    setScheduleSessionId(session.id);
+    setScheduleCourse(session.courseId);
+    setScheduleTitle(session.workshopName);
+    setScheduleInstructor(session.instructor);
+    setScheduleDate(session.date);
+    setScheduleTime(session.time);
+    setScheduleSeats(session.totalSeats);
   };
 
   // Excel Excel direct downloading proxy
@@ -738,6 +841,135 @@ export default function AdminPanel({
                 <span>Issue & Sign Certificate</span>
               </button>
             </form>
+
+            <div className="mt-8 bg-brand-cream/20 rounded-2xl border border-brand-primary/15 p-5 text-left">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-brand-primary uppercase tracking-widest">Schedule Manager</span>
+                  <h4 className="font-display font-black text-base text-brand-dark mt-1">Create or update workshop sessions</h4>
+                </div>
+                {scheduleSessionId && (
+                  <button
+                    type="button"
+                    onClick={cancelScheduleEdit}
+                    className="text-[10px] font-bold uppercase text-brand-dark/70 hover:text-brand-primary"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
+
+              <form onSubmit={handleScheduleSubmission} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Workshop Title</label>
+                  <input
+                    type="text"
+                    value={scheduleTitle}
+                    onChange={(e) => setScheduleTitle(e.target.value)}
+                    placeholder="e.g. AI Productivity Bootcamp"
+                    className="w-full px-3.5 py-2.5 bg-white border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Course</label>
+                    <select
+                      value={scheduleCourse}
+                      onChange={(e) => setScheduleCourse(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-white border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    >
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>{course.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Instructor</label>
+                    <input
+                      type="text"
+                      value={scheduleInstructor}
+                      onChange={(e) => setScheduleInstructor(e.target.value)}
+                      placeholder="Instructor name"
+                      className="w-full px-3.5 py-2.5 bg-white border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Time</label>
+                    <input
+                      type="text"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      placeholder="10:00 AM"
+                      className="w-full px-3.5 py-2.5 bg-white border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Seats</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={scheduleSeats}
+                      onChange={(e) => setScheduleSeats(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 bg-white border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isScheduling}
+                  className="w-full py-2.5 bg-[#C19A6B] text-white rounded-xl text-xs font-bold hover:bg-[#A98356] transition"
+                >
+                  {scheduleSessionId ? 'Update Session' : 'Create Session'}
+                </button>
+              </form>
+
+              <div className="mt-6 space-y-3">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-brand-dark/60">Current Sessions</h5>
+                {schedule.length ? (
+                  schedule.map((session) => (
+                    <div key={session.id} className="p-3 rounded-2xl border border-brand-primary/15 bg-white text-left text-xs">
+                      <div className="flex justify-between items-start gap-3">
+                        <div>
+                          <p className="font-bold text-brand-dark">{session.workshopName}</p>
+                          <p className="text-[10px] text-brand-dark/60">{session.date} • {session.time}</p>
+                          <p className="text-[10px] text-brand-dark/60">{session.instructor} • Seats: {session.seatsRemaining}/{session.totalSeats}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => startScheduleEdit(session)}
+                            className="px-2 py-1 rounded-lg bg-brand-primary/10 text-brand-primary text-[10px] font-bold hover:bg-brand-primary/15"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSchedule(session.id)}
+                            className="px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold hover:bg-rose-100"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[10px] text-brand-dark/50">No scheduled sessions exist yet. Create one to notify students directly.</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

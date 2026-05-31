@@ -1,12 +1,19 @@
+import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
+import session from 'express-session';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import AppleStrategy from 'passport-apple';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { 
   User, Enrollment, Course, ResourceDownload, AITool, 
   ForumPost, QuizQuestion, QuizHistory, Announcement, Notification, SessionSchedule 
 } from './src/types';
+
+dotenv.config();
 
 // Establish relative locations
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -346,10 +353,207 @@ async function startServer() {
   app.use(express.json({ limit: '12mb' }));
   app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 
-  // Helper function to mock hash passwords (for presentation logic, keeping it clean)
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'rawthink-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }
+  }));
+
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+  const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+  const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID || '';
+  const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID || '';
+  const APPLE_KEY_ID = process.env.APPLE_KEY_ID || '';
+  const APPLE_PRIVATE_KEY = (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const APPLE_REDIRECT_URI = process.env.APPLE_REDIRECT_URI || `http://localhost:3000/auth/apple/callback`;
+
+  const pendingOtps: Record<string, { otp: string; expiresAt: number }> = {};
+
   const sanitizeStr = (s: string) => s.trim().replace(/['"<>]/g, '');
 
+  passport.serializeUser((user: any, done: (err: any, id?: any) => void) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser((id: string, done: (err: any, user?: any) => void) => {
+    const db = readDB();
+    const user = db.users.find((u: User) => u.id === id);
+    done(null, user || null);
+  });
+
+  const findOrCreateSocialUser = (profileEmail: string, displayName: string, phoneNumber = '', providerName = ''): User => {
+    const db = readDB();
+    const emailClean = profileEmail.toLowerCase().trim();
+    let user = db.users.find((u: User) => u.email === emailClean);
+    if (!user) {
+      const userPhone = phoneNumber || '';
+      const newUser: User = {
+        id: 'u-' + Math.random().toString(36).substring(2, 9),
+        name: sanitizeStr(displayName),
+        email: emailClean,
+        phone: userPhone,
+        role: 'student',
+        referralCode: `${providerName.toUpperCase().slice(0, 3)}${Math.floor(Math.random() * 9000 + 1000)}`,
+        points: 20,
+        badges: [`${providerName.charAt(0).toUpperCase() + providerName.slice(1)} Connect`],
+        streak: 1,
+        createdAt: new Date().toISOString(),
+        achievements: ['Social Login'],
+        referrals: [],
+        referredDownloads: 0,
+        selectedTimeSlots: {}
+      };
+      (newUser as any).password = `${providerName}-linked`;
+      db.users.push(newUser);
+      writeDB(db);
+      user = newUser;
+    }
+    return user;
+  };
+
+  if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+    passport.use(new GoogleStrategy({
+      clientID: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      callbackURL: '/auth/google/callback'
+    }, async (_accessToken: string, _refreshToken: string, profile: any, done: (err: any, user?: any) => void) => {
+      try {
+        const email = profile.emails?.[0]?.value || `google-${profile.id}@rawthink.ai`;
+        const name = profile.displayName || 'Google User';
+        const user = findOrCreateSocialUser(email, name, '', 'google');
+        done(null, user);
+      } catch (err) {
+        done(err as any, null);
+      }
+    }));
+  }
+
+  if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID && APPLE_PRIVATE_KEY) {
+    passport.use(new AppleStrategy({
+      clientID: APPLE_CLIENT_ID,
+      teamID: APPLE_TEAM_ID,
+      keyID: APPLE_KEY_ID,
+      privateKey: APPLE_PRIVATE_KEY,
+      callbackURL: '/auth/apple/callback',
+      passReqToCallback: false,
+    }, async (_accessToken: string, _refreshToken: string, idToken: any, profile: any, done: (err: any, user?: any) => void) => {
+      try {
+        const email = profile.email || `apple-${profile.id}@rawthink.ai`;
+        const name = profile.name?.firstName ? `${profile.name.firstName} ${profile.name.lastName || ''}`.trim() : 'Apple User';
+        const user = findOrCreateSocialUser(email, name, '', 'apple');
+        done(null, user);
+      } catch (err) {
+        done(err as any, null);
+      }
+    }));
+  }
+
   // ---------------- AUTH API ENDPOINTS ----------------
+
+  const renderLoginSuccessPage = (res: Response, user: User) => {
+    return res.send(`<!doctype html><html><head><meta charset="utf-8"><title>RAWTHINK AI Login Success</title></head><body><script>
+      const user = ${JSON.stringify(user)};
+      window.localStorage.setItem('rawthink_user', JSON.stringify(user));
+      window.location.href = '/';
+    </script></body></html>`);
+  };
+
+  const renderLoginFailurePage = (res: Response, message = 'Login failed') => {
+    return res.status(401).send(`<!doctype html><html><head><meta charset="utf-8"><title>RAWTHINK AI Login Failed</title></head><body><h1>${message}</h1><p><a href="/">Return to RAWTHINK</a></p></body></html>`);
+  };
+
+  const fallbackSocialLogin = (providerName: 'google' | 'apple', res: Response) => {
+    const user = findOrCreateSocialUser(`${providerName}-${Date.now()}@rawthink.ai`, `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} User`, '', providerName);
+    return renderLoginSuccessPage(res, user);
+  };
+
+  app.get('/auth/google', (req: Request, res: Response, next: NextFunction) => {
+    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+      passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+    } else {
+      fallbackSocialLogin('google', res);
+    }
+  });
+
+  app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/failure' }), (req: Request, res: Response) => {
+    const user = (req as any).user as User;
+    if (!user) return renderLoginFailurePage(res, 'Google login failed to resolve user.');
+    renderLoginSuccessPage(res, user);
+  });
+
+  app.get('/auth/apple', (req: Request, res: Response, next: NextFunction) => {
+    if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID && APPLE_PRIVATE_KEY) {
+      passport.authenticate('apple')(req, res, next);
+    } else {
+      fallbackSocialLogin('apple', res);
+    }
+  });
+
+  app.post('/auth/apple/callback', passport.authenticate('apple', { failureRedirect: '/auth/failure' }), (req: Request, res: Response) => {
+    const user = (req as any).user as User;
+    if (!user) return renderLoginFailurePage(res, 'Apple login failed to resolve user.');
+    renderLoginSuccessPage(res, user);
+  });
+
+  app.get('/auth/failure', (req: Request, res: Response) => {
+    renderLoginFailurePage(res, 'Authentication failed or was canceled.');
+  });
+
+  app.post('/api/auth/phone/send-otp', (req: Request, res: Response) => {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
+    }
+    const phoneClean = sanitizeStr(phone);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    pendingOtps[phoneClean] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 };
+    writeDB(readDB());
+    return res.json({ message: `OTP sent to ${phoneClean}. Use ${otp} to verify.`, otp });
+  });
+
+  app.post('/api/auth/phone/verify', (req: Request, res: Response) => {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ error: 'Phone and OTP are required.' });
+    }
+    const phoneClean = sanitizeStr(phone);
+    const record = pendingOtps[phoneClean];
+    if (!record || record.otp !== otp || record.expiresAt < Date.now()) {
+      return res.status(401).json({ error: 'OTP is invalid or expired.' });
+    }
+
+    delete pendingOtps[phoneClean];
+    const db = readDB();
+    const email = `phone-${phoneClean}@rawthink.ai`;
+    let user = db.users.find((u: User) => u.phone === phoneClean || u.email === email);
+    if (!user) {
+      user = {
+        id: 'u-' + Math.random().toString(36).substring(2, 9),
+        name: `Phone User ${phoneClean.slice(-4)}`,
+        email,
+        phone: phoneClean,
+        role: 'student',
+        referralCode: `PH${Math.floor(Math.random() * 9000 + 1000)}`,
+        points: 15,
+        badges: ['Phone Verified'],
+        streak: 1,
+        createdAt: new Date().toISOString(),
+        achievements: ['Phone Login'],
+        referrals: [],
+        referredDownloads: 0,
+        selectedTimeSlots: {}
+      };
+      (user as any).password = otp;
+      db.users.push(user);
+      writeDB(db);
+    }
+
+    res.json({ success: true, user });
+  });
 
   app.post('/api/auth/signup', (req: Request, res: Response) => {
     const { name, email, phone, password, referralCode } = req.body;
@@ -507,6 +711,79 @@ Pepsicola, Suncity, Kathmandu, Nepal`
     }
 
     res.json({ success: true, user });
+  });
+
+  app.post('/api/auth/social-login', (req: Request, res: Response) => {
+    const { provider, email, phone, otp } = req.body;
+    const providerKey = provider?.toLowerCase?.();
+    const db = readDB();
+
+    if (providerKey === 'phone') {
+      if (!phone) {
+        return res.status(400).json({ error: 'Phone number is required for phone sign-in.' });
+      }
+      if (!otp || otp !== '123456') {
+        return res.status(401).json({ error: 'Please enter the valid OTP code sent to your phone.' });
+      }
+
+      const phoneClean = phone.trim();
+      let user: User | undefined = db.users.find((u: User) => u.phone === phoneClean);
+      if (!user) {
+        const newUser: User = {
+          id: 'u-' + Math.random().toString(36).substring(2, 9),
+          name: `Phone User ${phoneClean.slice(-4)}`,
+          email: `phone-${phoneClean}@rawthink.ai`,
+          phone: phoneClean,
+          role: 'student',
+          referralCode: `P${Math.floor(Math.random() * 9000 + 1000)}`,
+          points: 20,
+          badges: ['Phone Verified'],
+          streak: 1,
+          createdAt: new Date().toISOString(),
+          achievements: ['Phone Login'],
+          referrals: [],
+          referredDownloads: 0,
+          selectedTimeSlots: {}
+        };
+        (newUser as any).password = otp;
+        db.users.push(newUser);
+        writeDB(db);
+        return res.json({ success: true, user: newUser });
+      }
+
+      return res.json({ success: true, user });
+    }
+
+    if (providerKey === 'google' || providerKey === 'apple') {
+      const emailClean = email ? email.toLowerCase().trim() : `${providerKey}-${Date.now()}@rawthink.ai`;
+      let user = db.users.find((u: User) => u.email === emailClean);
+      if (!user) {
+        const newUser: User = {
+          id: 'u-' + Math.random().toString(36).substring(2, 9),
+          name: providerKey === 'google' ? 'Google Learner' : 'Apple Learner',
+          email: emailClean,
+          phone: phone ? phone.trim() : '',
+          role: 'student',
+          referralCode: `${providerKey.toUpperCase().slice(0, 3)}${Math.floor(Math.random() * 9000 + 1000)}`,
+          points: 25,
+          badges: [`${providerKey.charAt(0).toUpperCase() + providerKey.slice(1)} Connect`],
+          streak: 1,
+          createdAt: new Date().toISOString(),
+          achievements: ['Social Login'],
+          referrals: [],
+          referredDownloads: 0,
+          selectedTimeSlots: {}
+        };
+        (newUser as any).password = `${providerKey}-linked`;
+        db.users.push(newUser);
+        writeDB(db);
+        return res.json({ success: true, user: newUser });
+      }
+
+      return res.json({ success: true, user });
+    }
+
+    return res.status(400).json({ error: 'Unsupported social login provider.' });
   });
 
   app.post('/api/auth/forgot-password', (req: Request, res: Response) => {
@@ -1016,6 +1293,42 @@ Pepsicola, Suncity, Kathmandu, Nepal`
 
     writeDB(db);
     res.json({ success: true, session: newSession, schedule: db.schedule });
+  });
+
+  app.put('/api/schedule/:id', (req: Request, res: Response) => {
+    const sessionId = req.params.id;
+    const { courseId, workshopName, instructor, date, time, totalSeats } = req.body;
+    const db = readDB();
+    const session = db.schedule.find((s: SessionSchedule) => s.id === sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Schedule session not found.' });
+    }
+
+    session.courseId = courseId || session.courseId;
+    session.workshopName = workshopName !== undefined ? sanitizeStr(workshopName) : session.workshopName;
+    session.instructor = instructor !== undefined ? sanitizeStr(instructor) : session.instructor;
+    session.date = date !== undefined ? sanitizeStr(date) : session.date;
+    session.time = time !== undefined ? sanitizeStr(time) : session.time;
+    if (totalSeats !== undefined) {
+      const seatsDiff = Number(totalSeats) - session.totalSeats;
+      session.totalSeats = Number(totalSeats);
+      session.seatsRemaining = Math.max(0, session.seatsRemaining + seatsDiff);
+    }
+
+    writeDB(db);
+    res.json({ success: true, session, schedule: db.schedule });
+  });
+
+  app.delete('/api/schedule/:id', (req: Request, res: Response) => {
+    const sessionId = req.params.id;
+    const db = readDB();
+    const originalCount = db.schedule.length;
+    db.schedule = db.schedule.filter((s: SessionSchedule) => s.id !== sessionId);
+    if (db.schedule.length === originalCount) {
+      return res.status(404).json({ error: 'Schedule session not found.' });
+    }
+    writeDB(db);
+    res.json({ success: true, schedule: db.schedule });
   });
 
   // Approved student reserves a specific class session schedule slot
