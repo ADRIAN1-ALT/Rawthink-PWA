@@ -1,0 +1,559 @@
+{
+  "users": [
+    {
+      "id": "admin-1",
+      "name": "Super Admin",
+      "email": "admin@rawthink.ai",
+      "phone": "9841234567",
+      "role": "admin",
+      "referralCode": "RAWADMIN",
+      "points": 1000,
+      "badges": [
+        "Founder",
+        "AI Expert"
+      ],
+      "streak": 7,
+      "createdAt": "2026-05-15T00:00:00Z",
+      "achievements": [
+        "Community Architect"
+      ]
+    },
+    {
+      "id": "student-demo",
+      "name": "Prajwal Shrestha",
+      "email": "student@gmail.com",
+      "phone": "9801122334",
+      "role": "student",
+      "referralCode": "PRAJWAL9",
+      "points": 40,
+      "badges": [
+        "Early Bird"
+      ],
+      "streak": 1,
+      "createdAt": "2026-05-30T10:00:00Z",
+      "achievements": [
+        "Account Registered"
+      ]
+    }
+  ],
+  "courses": [
+    {
+      "id": "course-1",
+      "title": "AI Foundations Bootcamp",
+      "price": 299,
+      "duration": "1 Hour",
+      "features": [
+        "AI Basics & Evolution",
+        "Introduction to ChatGPT & Modern LLMs",
+        "Prompting Fundamentals & Structure",
+        "AI Advantages in Daily Workflows",
+        "AI Limitations & Hallucinations",
+        "Interactive Live Q&A Session"
+      ],
+      "bonuses": [
+        "AI Starter Guide PDF",
+        "Premium Beginner Prompt Pack",
+        "Official RAWTHINK AI Certificate"
+      ],
+      "schedule": "Every Saturday, 2:00 PM - 3:00 PM NPT"
+    },
+    {
+      "id": "course-2",
+      "title": "AI Productivity Workshop",
+      "price": 349,
+      "duration": "2 Hours",
+      "badge": "Limited Seats",
+      "features": [
+        "Advanced System Role Prompting",
+        "AI for Academic Studies & Research",
+        "AI for Automated Presentation Writing",
+        "Personal Productivity Systems & Dashboards",
+        "Practical Live Exercises & Code Generation",
+        "Visual Asset Design with AI Canvas"
+      ],
+      "bonuses": [
+        "100+ Masterclass Prompt Templates",
+        "AI Toolkit Cheat Sheet",
+        "Direct Lifetime Recording Access",
+        "Official Completion Certificate"
+      ],
+      "schedule": "Every Sunday, 11:00 AM - 1:00 PM NPT"
+    },
+    {
+      "id": "course-3",
+      "title": "AI Development & Automation Masterclass",
+      "price": 599,
+      "duration": "3 Hours",
+      "badge": "Most Popular",
+      "features": [
+        "Integrating AI APIs inside Developer projects",
+        "Building Automated Workflows & Orchestrators",
+        "AI Assistants, Autonomous Agents, & Web Scraping",
+        "Solving Real-world Business Use Cases with AI",
+        "Full Practical Projects From Scratch (Coded Live)",
+        "Connecting Frontend Apps securely to Backend AI Nodes"
+      ],
+      "bonuses": [
+        "Developer Project Templates Archive",
+        "Raw Premium Developers Prompt Library",
+        "Exclusive RAWTHINK Discord VIP Channel",
+        "Vetted Digital Career Certificate"
+      ],
+      "schedule": "Every Wednesday, 6:00 PM - 9:00 PM NPT"
+    }
+  ],
+  "enrollments": [
+    {
+      "id": "en-1",
+      "userId": "student-demo",
+      "userName": "Prajwal Shrestha",
+      "userEmail": "student@gmail.com",
+      "courseId": "course-1",
+      "courseTitle": "AI Foundations Bootcamp",
+      "price": 299,
+      "transactionId": "TXN-984218-KTM",
+      "remarks": "Enrolling in Saturday Bootcamp!",
+      "status": "approved",
+      "createdAt": "2026-05-30T11:00:00Z"
+    }
+  ],
+  "tools": [
+    {
+      "id": "tool-1",
+      "name": "ChatGPT",
+      "category": "Writing",
+      "description": "Advanced conversational agent for writing, editing, and planning content.",
+      "tags": [
+        "LLM",
+        "Writing",
+        "Free Tier"
+      ],
+      "link": "https://chatgpt.com",
+      "iconName": "MessageSquare"
+    },
+    {
+      "id": "tool-2",
+      "name": "Jasper AI",
+      "category": "Writing",
+      "description": "Enterprise-grade copywriting tool for sales campaigns and newsletters.",
+      "tags": [
+        "Copywriting",
+        "Paid"
+      ],
+      "link": "https://jasper.ai",
+      "iconName": "PenTool"
+    },
+    {
+      "id": "tool-3",
+      "name": "Copy.ai",
+      "category": "Writing",
+      "description": "AI writing assistant that streamlines corporate social copy generation.",
+      "tags": [
+        "Social Media",
+        "Paid"
+      ],
+      "link": "https://copy.ai",
+      "iconName": "FileText"
+    },
+    {
+      "id": "tool-4",
+      "name": "Midjourney",
+      "category": "Image",
+      "description": "State-of-the-art artistic graphics engine operating via Discord commands.",
+      "tags": [
+        "Art",
+        "Community",
+        "Paid"
+      ],
+      "link": "https://midjourney.com",
+      "iconName": "Palette"
+    },
+    {
+      "id": "tool-5",
+      "name": "DALL-E 3",
+      "category": "Image",
+      "description": "OpenAI text-to-image engine with exceptional instruction adherence.",
+      "tags": [
+        "Image Gen",
+        "ChatGPT Integration"
+      ],
+      "link": "https://openai.com/dall-e-3",
+      "iconName": "Image"
+    },
+    {
+      "id": "tool-6",
+      "name": "Stable Diffusion",
+      "category": "Image",
+      "description": "Open-source photorealistic image models suitable for self-hosting.",
+      "tags": [
+        "Open Source",
+        "Advanced"
+      ],
+      "link": "https://stability.ai",
+      "iconName": "Layers"
+    },
+    {
+      "id": "tool-7",
+      "name": "Runway Gen-2",
+      "category": "Video",
+      "description": "Award-winning video generation platform utilizing multimodality inputs.",
+      "tags": [
+        "Video Gen",
+        "Paid"
+      ],
+      "link": "https://runwayml.com",
+      "iconName": "Tv"
+    },
+    {
+      "id": "tool-8",
+      "name": "Sora",
+      "category": "Video",
+      "description": "Complex physics simulator producing high-fidelity cinematic video spans.",
+      "tags": [
+        "Cinematic",
+        "OpenAI"
+      ],
+      "link": "https://openai.com/sora",
+      "iconName": "Video"
+    },
+    {
+      "id": "tool-9",
+      "name": "Pika Labs",
+      "category": "Video",
+      "description": "Responsive video customization platform specialized in motion control.",
+      "tags": [
+        "Animation",
+        "Free Tier"
+      ],
+      "link": "https://pika.art",
+      "iconName": "Clapperboard"
+    },
+    {
+      "id": "tool-10",
+      "name": "GitHub Copilot",
+      "category": "Coding",
+      "description": "First major IDE autocomplete model improving development speed.",
+      "tags": [
+        "Autocomplete",
+        "Developer"
+      ],
+      "link": "https://github.com/features/copilot",
+      "iconName": "Code"
+    },
+    {
+      "id": "tool-11",
+      "name": "Cursor",
+      "category": "Coding",
+      "description": "Next-generation code compiler IDE optimized for continuous AI pairings.",
+      "tags": [
+        "IDE",
+        "Editor",
+        "Highly Recommended"
+      ],
+      "link": "https://cursor.com",
+      "iconName": "Cpu"
+    },
+    {
+      "id": "tool-12",
+      "name": "Windsurf",
+      "category": "Coding",
+      "description": "AI-native flow editor with collaborative capabilities.",
+      "tags": [
+        "IDE",
+        "Flow"
+      ],
+      "link": "https://codeium.com/windsurf",
+      "iconName": "Terminal"
+    },
+    {
+      "id": "tool-13",
+      "name": "Consensus",
+      "category": "Research",
+      "description": "Scientific search machine synthesizing answers from millions of journals.",
+      "tags": [
+        "Academic",
+        "Journals"
+      ],
+      "link": "https://consensus.app",
+      "iconName": "Library"
+    },
+    {
+      "id": "tool-14",
+      "name": "Perplexity AI",
+      "category": "Research",
+      "description": "Dynamic conversational search providing live sources and notes.",
+      "tags": [
+        "Search Engine",
+        "Free Tier"
+      ],
+      "link": "https://perplexity.ai",
+      "iconName": "Search"
+    },
+    {
+      "id": "tool-15",
+      "name": "Elicit",
+      "category": "Research",
+      "description": "Research automation platform mapping concepts, trends, and citations.",
+      "tags": [
+        "Research",
+        "Synthesizer"
+      ],
+      "link": "https://elicit.com",
+      "iconName": "BookOpen"
+    },
+    {
+      "id": "tool-16",
+      "name": "Tome",
+      "category": "Presentation",
+      "description": "Interactive storytelling platform compiling fully customized decks.",
+      "tags": [
+        "Decks",
+        "AI Slides"
+      ],
+      "link": "https://tome.app",
+      "iconName": "Layout"
+    },
+    {
+      "id": "tool-17",
+      "name": "Gamma App",
+      "category": "Presentation",
+      "description": "Beautiful web-native designer composing pages and presentations.",
+      "tags": [
+        "Presentations",
+        "Highly Polished"
+      ],
+      "link": "https://gamma.app",
+      "iconName": "Sparkles"
+    },
+    {
+      "id": "tool-18",
+      "name": "Notion AI",
+      "category": "Productivity",
+      "description": "In-workspace collaborator assisting summary writing, translations and spreadsheets.",
+      "tags": [
+        "Notes",
+        "Co-Writer"
+      ],
+      "link": "https://notion.so",
+      "iconName": "Briefcase"
+    },
+    {
+      "id": "tool-19",
+      "name": "Otter.ai",
+      "category": "Productivity",
+      "description": "Live transcription utility taking active minutes during meetings.",
+      "tags": [
+        "Minutes",
+        "Transcription"
+      ],
+      "link": "https://otter.ai",
+      "iconName": "Volume2"
+    }
+  ],
+  "resources": [
+    {
+      "id": "res-1",
+      "title": "AI Beginner Guide PDF",
+      "category": "Ebook",
+      "downloadsCount": 421,
+      "fileSize": "1.4 MB",
+      "downloadUrl": "#"
+    },
+    {
+      "id": "res-2",
+      "title": "Ultimate Prompt Engineering Matrix",
+      "category": "Prompt Pack",
+      "downloadsCount": 512,
+      "fileSize": "950 KB",
+      "downloadUrl": "#"
+    },
+    {
+      "id": "res-3",
+      "title": "Top 70+ AI Tools Catalog with links",
+      "category": "Directory",
+      "downloadsCount": 689,
+      "fileSize": "1.1 MB",
+      "downloadUrl": "#"
+    },
+    {
+      "id": "res-4",
+      "title": "Bootcamp Lecture Notes & Cheat Sheet",
+      "category": "Lecture Notes",
+      "downloadsCount": 198,
+      "fileSize": "620 KB",
+      "downloadUrl": "#"
+    },
+    {
+      "id": "res-5",
+      "title": "Nepal-centric AI Career & Business Roadmap",
+      "category": "Ebook",
+      "downloadsCount": 304,
+      "fileSize": "2.1 MB",
+      "downloadUrl": "#"
+    },
+    {
+      "id": "res-6",
+      "title": "Midjourney Prompt Cheat Sheet V6",
+      "category": "Prompt Pack",
+      "downloadsCount": 275,
+      "fileSize": "740 KB",
+      "downloadUrl": "#"
+    }
+  ],
+  "schedule": [
+    {
+      "id": "sched-1",
+      "courseId": "course-1",
+      "workshopName": "AI Foundations Bootcamp",
+      "instructor": "Er. Sandesh Shrestha",
+      "date": "2026-06-06",
+      "time": "14:00 - 15:00",
+      "seatsRemaining": 18,
+      "totalSeats": 50
+    },
+    {
+      "id": "sched-2",
+      "courseId": "course-2",
+      "workshopName": "AI Productivity Workshop",
+      "instructor": "Dr. Ramesh Adhikari",
+      "date": "2026-06-07",
+      "time": "11:00 - 13:00",
+      "seatsRemaining": 8,
+      "totalSeats": 30
+    },
+    {
+      "id": "sched-3",
+      "courseId": "course-3",
+      "workshopName": "AI Dev & Automation Masterclass",
+      "instructor": "Er. Sandesh Shrestha",
+      "date": "2026-06-10",
+      "time": "18:00 - 21:00",
+      "seatsRemaining": 12,
+      "totalSeats": 40
+    }
+  ],
+  "quizzes": [
+    {
+      "id": "q-1",
+      "question": "What does system role prompting refer to in ChatGPT?",
+      "options": [
+        "Setting the conversational limit of ChatGPT",
+        "Instructing the chatbot to adopt a specific persona, background, and set of guidelines",
+        "Choosing the theme or background color of OpenAI interface",
+        "Paying for ChatGPT Plus subscription"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "System role prompting anchors the model behaviour by guiding its specific identity, credentials, rules, tone, and processing goals before handling prompt inputs."
+    },
+    {
+      "id": "q-2",
+      "question": "Which prompting pattern forces the LLM to explain thoughts sequentially before concluding?",
+      "options": [
+        "Few-Shot Prompting",
+        "Chain-of-Thought (CoT) Prompting",
+        "Zero-Shot Prompting",
+        "Direct Instruction Pattern"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Chain-of-Thought (CoT) prompting explicitly triggers the model to output intermediate reasoning steps, which improves logic precision."
+    },
+    {
+      "id": "q-3",
+      "question": "What is a hallucination in generative AI?",
+      "options": [
+        "When the server fails to load because of traffic overload",
+        "When the AI outputs plausible-sounding but factually incorrect or fabricated claims",
+        "When the AI screen flickers red under dark mode settings",
+        "A state-of-the-art model specialized in mental health diagnostics"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Hallucination occurs when an LLM synthesizes statements that sound fluent, but are entirely invented or factually incorrect."
+    },
+    {
+      "id": "q-4",
+      "question": "Which of the following is optimal for fine-tuning prompt adherence without writing custom APIs?",
+      "options": [
+        "Providing clear examples (Few-Shot Prompting) and structured XML tag indicators",
+        "Re-installing Node modules",
+        "Typing prompts in ALL-CAPS screaming format",
+        "Ignoring system instructions"
+      ],
+      "correctOptionIndex": 0,
+      "explanation": "Providing structure like XML tags (<examples>, <context>) and few-shot examples optimizes structured outputs dramatically."
+    }
+  ],
+  "leaderboard": [
+    {
+      "id": "lh-1",
+      "userId": "user-demo1",
+      "userName": "Aayush Koirala",
+      "score": 4,
+      "totalQuestions": 4,
+      "pointsEarned": 100,
+      "date": "2026-05-29"
+    },
+    {
+      "id": "lh-2",
+      "userId": "user-demo2",
+      "userName": "Supriya Thapa",
+      "score": 4,
+      "totalQuestions": 4,
+      "pointsEarned": 100,
+      "date": "2026-05-30"
+    },
+    {
+      "id": "lh-3",
+      "userId": "user-demo3",
+      "userName": "Bipin Gurung",
+      "score": 3,
+      "totalQuestions": 4,
+      "pointsEarned": 75,
+      "date": "2026-05-31"
+    },
+    {
+      "id": "lh-4",
+      "userId": "user-demo4",
+      "userName": "Neha Pokharel",
+      "score": 3,
+      "totalQuestions": 4,
+      "pointsEarned": 75,
+      "date": "2026-05-31"
+    }
+  ],
+  "forum": [
+    {
+      "id": "post-1",
+      "userId": "admin-1",
+      "userName": "RAWTHINK AI Team",
+      "userRole": "admin",
+      "category": "announcement",
+      "title": "Welcome to RAWTHINK AI Academy Nepal! 🇳🇵",
+      "content": "We are thrilled to launch this premium digital AI community. Our courses utilize interactive live screens, eSewa verified digital gateways, certificates issuing dashboards, and custom prompt libraries. Jump into the Resources center to grab free guidelines today! Join the discussions, ask questions, or practice prompts here on this forum.",
+      "likes": 24,
+      "comments": [
+        {
+          "id": "c-1",
+          "userId": "user-bipin",
+          "userName": "Bipin Gurung",
+          "userRole": "student",
+          "content": "Incredible platform! Really love the clean brown-cream UI, and having a local community makes a big difference.",
+          "createdAt": "2026-05-31T00:15:00Z"
+        }
+      ],
+      "createdAt": "2026-05-30T09:00:00Z"
+    },
+    {
+      "id": "post-2",
+      "userId": "user-demo1",
+      "userName": "Aayush Koirala",
+      "userRole": "student",
+      "category": "showcase",
+      "title": "Automated Kathmandu Bus Route Optimizer with Cursor!",
+      "content": "Using prompt chaining techniques learned during the automation preview, I configured a full Node compiler inside Cursor to write a route optimizer schema for central KTM. Highly recommend Course 3 code examples!",
+      "likes": 12,
+      "comments": [],
+      "createdAt": "2026-05-31T00:05:00Z"
+    }
+  ],
+  "notifications": []
+}

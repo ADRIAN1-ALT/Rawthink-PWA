@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Outfit", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", "Courier New", Courier, monospace;
+
+  /* Premium Brand Palette */
+  --color-brand-primary: #C19A6B;    /* Light Brown */
+  --color-brand-cream: #F7F1E8;      /* Cream */
+  --color-brand-dark: #5C4033;       /* Dark Brown */
+  --color-brand-white: #FFFFFF;      /* Pure White */
+  
+  --shadow-premium: 0 4px 30px rgba(92, 64, 51, 0.05);
+  --shadow-glass: 0 8px 32px 0 rgba(193, 154, 107, 0.08);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-brand-cream);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+/* Glassmorphism Classes for Apple-like Aesthetics */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(193, 154, 107, 0.15);
+}
+
+/* Custom interactive glowing ring */
+.button-pulse {
+  box-shadow: 0 0 0 0 rgba(193, 154, 107, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(193, 154, 107, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(193, 154, 107, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(193, 154, 107, 0);
+  }
+}
+
+/* Clean Hide Scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
