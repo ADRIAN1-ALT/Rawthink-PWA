@@ -4,6 +4,8 @@ export interface User {
   email: string;
   phone: string;
   role: 'student' | 'admin';
+  sessionToken?: string;
+  coins?: number; // alias for points - used to denote spendable coins in UI
   referralCode: string;
   referredByBy?: string;
   points: number;
@@ -13,8 +15,14 @@ export interface User {
   achievements: string[];
   referrals?: string[]; // Emails of registered friends referred by this user
   unlockedResources?: string[]; // List of premium resource IDs unlocked with coins
+  unlockedTools?: string[]; // List of AI tool IDs unlocked with coins
+  coinsInvested?: number; // cumulative coins spent (used to lift unlock limits)
   referredDownloads?: number; // Number of referred friends who successfully downloaded the PWA app
   selectedTimeSlots?: { [courseId: string]: string }; // Course ID to TimeSlot ID booking map
+  password?: string;
+  resetToken?: string;
+  resetTokenExpiresAt?: number;
+  resetTokenSentAt?: string;
 }
 
 export interface Course {

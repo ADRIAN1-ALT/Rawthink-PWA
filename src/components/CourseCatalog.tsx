@@ -13,10 +13,12 @@ interface CourseCatalogProps {
   showNotification: (msg: string, type: 'success' | 'error' | 'info') => void;
   purchasedCourseIds: string[];
   pendingCourseIds: string[];
+  onUserUpdate?: (user: User) => void;
 }
 
 export default function CourseCatalog({
   courses, currentUser, setView, onEnrollSuccess, showNotification, purchasedCourseIds, pendingCourseIds
+  , onUserUpdate
 }: CourseCatalogProps) {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   
@@ -171,6 +173,38 @@ export default function CourseCatalog({
     }
   };
 
+  const handlePurchaseWithCoins = async (course: Course) => {
+    if (!currentUser) {
+      showNotification('Please sign in to purchase courses with coins.', 'info');
+      setView('auth');
+      return;
+    }
+
+    const cost = course.price;
+    const balance = (currentUser.coins ?? currentUser.points ?? 0);
+    const confirmPay = window.confirm(`Spend ${cost} coins to purchase "${course.title}"? Your balance: ${balance} coins.`);
+    if (!confirmPay) return;
+    if (balance < cost) {
+      showNotification('Insufficient coins for this purchase.', 'error');
+      return;
+    }
+
+    try {
+      const resp = await fetch('/api/courses/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, courseId: course.id }) });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Purchase failed');
+
+      // Update enrollments and user state
+      onEnrollSuccess(data.enrollment);
+      showNotification('Course purchased successfully with coins!', 'success');
+      if (onUserUpdate) {
+        onUserUpdate({ ...currentUser, coins: data.coins ?? currentUser.coins, coinsInvested: data.coinsInvested ?? currentUser.coinsInvested });
+      }
+    } catch (err: any) {
+      showNotification(err.message || 'Purchase failed', 'error');
+    }
+  };
+
   return (
     <div className="py-16 px-4 sm:px-6 lg:px-8 bg-brand-cream/40">
       <div className="max-w-7xl mx-auto">
@@ -278,6 +312,15 @@ export default function CourseCatalog({
                     >
                       <span>Pay Now To Enroll</span>
                       <ArrowRight size={13} />
+                    </button>
+                  )}
+                  {/* Option: Purchase instantly with coins if balance available */}
+                  {!isPurchased && !isPending && currentUser && ((currentUser.coins ?? currentUser.points ?? 0) >= course.price) && (
+                    <button
+                      onClick={() => handlePurchaseWithCoins(course)}
+                      className="w-full mt-2 text-center py-2 bg-[#C19A6B] text-white rounded-xl text-xs font-bold shadow-sm"
+                    >
+                      <span>Buy with {course.price} Coins</span>
                     </button>
                   )}
                 </div>

@@ -2,8 +2,10 @@ import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import session from 'express-session';
 import passport from 'passport';
+import nodemailer from 'nodemailer';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import AppleStrategy from 'passport-apple';
 import { createServer as createViteServer } from 'vite';
@@ -14,6 +16,27 @@ import {
 } from './src/types';
 
 dotenv.config();
+
+const SMTP_SERVICE = process.env.SMTP_SERVICE || 'gmail';
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_USER = process.env.SMTP_USER || 'rawthinkofficial.org@gmail.com';
+const SMTP_PASS = process.env.SMTP_PASS || '';
+const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
+
+const transporterOptions: any = SMTP_SERVICE
+  ? { service: SMTP_SERVICE, auth: { user: SMTP_USER, pass: SMTP_PASS } }
+  : {
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS
+      }
+    };
+
+const emailTransporter = SMTP_USER && SMTP_PASS ? nodemailer.createTransport(transporterOptions) : null;
 
 // Establish relative locations
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -278,7 +301,8 @@ function initDatabase() {
     quizzes: defaultQuizzes,
     leaderboard: defaultLeaderboard,
     forum: defaultForum,
-    notifications: [] as Notification[]
+    notifications: [] as Notification[],
+    pendingPayments: [] as any[]
   };
 
   if (!fs.existsSync(DB_FILE)) {
@@ -308,17 +332,39 @@ function readDB() {
     console.error('Error reading DB', e);
     return {
       users: [], courses: [], enrollments: [], tools: [], 
-      resources: [], schedule: [], quizzes: [], leaderboard: [], forum: [], notifications: []
+      resources: [], schedule: [], quizzes: [], leaderboard: [], forum: [], notifications: [],
+      pendingPayments: [],
+      announcements: [],
+      sentMailsLog: []
     };
   }
 }
 
 // Write helper
+let writeInProgress = false;
+const writeQueue: any[] = [];
+
 function writeDB(data: any) {
+  // If a write is already happening, keep only the latest queued data
+  if (writeInProgress) {
+    writeQueue[0] = data;
+    return;
+  }
+
+  writeInProgress = true;
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    const tmp = DB_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tmp, DB_FILE);
   } catch (e) {
     console.error('Error writing DB', e);
+  } finally {
+    writeInProgress = false;
+    if (writeQueue.length > 0) {
+      const next = writeQueue.shift();
+      // schedule next write on next tick to avoid deep recursion
+      process.nextTick(() => writeDB(next));
+    }
   }
 }
 
@@ -580,7 +626,8 @@ async function startServer() {
       role: 'student',
       referralCode: newRefCode,
       referredByBy: referralCode ? referralCode.toUpperCase().trim() : undefined,
-      points: referralCode ? 15 : 0, // Instant signup points if referred!
+        points: 100, // Initialize coins/points to 100 by default
+        coins: 100,
       badges: ['Early Bird'],
       streak: 1,
       createdAt: new Date().toISOString(),
@@ -637,8 +684,10 @@ Pepsicola, Suncity, Kathmandu, Nepal`
       const codeClean = referralCode.toUpperCase().trim();
       const referrer = db.users.find((u: User) => u.referralCode === codeClean);
       if (referrer) {
-        referrer.points = (referrer.points || 0) + 33; // Premium bonus!
-        
+        // Give a meaningful referral bonus as requested: +100 coins to the referrer
+        referrer.points = (referrer.points || 0) + 100;
+        referrer.coins = (referrer.coins || 0) + 100;
+
         // Ensure arrays are initialized
         if (!referrer.referrals) referrer.referrals = [];
         if (!referrer.referrals.includes(newUser.email)) {
@@ -663,7 +712,7 @@ Pepsicola, Suncity, Kathmandu, Nepal`
         db.notifications.push({
           id: 'notif-' + Math.random().toString(36).substring(2, 9),
           userId: referrer.id,
-          text: `🎉 A new student (${newUser.name}) registered using your referral! You earned +33 Points! Total: ${count}. ${milestoneMsg}`,
+          text: `🎉 A new student (${newUser.name}) registered using your referral! You earned +100 Coins! Total referrals: ${count}. ${milestoneMsg}`,
           isRead: false,
           createdAt: new Date().toISOString()
         });
@@ -685,6 +734,74 @@ Pepsicola, Suncity, Kathmandu, Nepal`
       user: newUser, 
       simulatedEmailSent: credentialsEmail 
     });
+  });
+
+  // Alias endpoint to match requested API contract: /api/auth/register
+  app.post('/api/auth/register', (req: Request, res: Response) => {
+    const { name, email, phone, password, referralCode } = req.body;
+    // Reuse signup validation and behavior
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({ error: 'All fields are strictly required.' });
+    }
+
+    const emailClean = email.toLowerCase().trim();
+    const db = readDB();
+    const exists = db.users.find((u: User) => u.email === emailClean);
+    if (exists) {
+      return res.status(400).json({ error: 'A user with this email already exists.' });
+    }
+
+    const newRefCode = `${name.substring(0, 4).toUpperCase()}${Math.floor(Math.random() * 90 + 10)}`;
+
+    const newUser: User = {
+      id: 'u-' + Math.random().toString(36).substring(2, 9),
+      name: sanitizeStr(name),
+      email: emailClean,
+      phone: sanitizeStr(phone),
+      role: 'student',
+      referralCode: newRefCode,
+      referredByBy: referralCode ? referralCode.toUpperCase().trim() : undefined,
+      points: 100,
+      coins: 100,
+      badges: ['Early Bird'],
+      streak: 1,
+      createdAt: new Date().toISOString(),
+      achievements: ['Account Registered'],
+      referrals: [],
+      referredDownloads: 0,
+      selectedTimeSlots: {}
+    };
+
+    (newUser as any).password = password;
+    db.users.push(newUser);
+
+    // store mail log
+    const credentialsEmail = {
+      to: newUser.email,
+      from: 'credentials-daemon@rawthink.ai',
+      subject: '🔑 Your RAWTHINK AI Academy Secure Credentials Generated!',
+      body: `Welcome ${newUser.name}! Your account has been created. Invite code: ${newRefCode}`
+    };
+    db.sentMailsLog = db.sentMailsLog || [];
+    db.sentMailsLog.push({ id: 'mail-' + Math.random().toString(36).substring(2, 9), userId: newUser.id, timestamp: new Date().toISOString(), ...credentialsEmail });
+
+    if (referralCode) {
+      const codeClean = referralCode.toUpperCase().trim();
+      const referrer = db.users.find((u: User) => u.referralCode === codeClean);
+      if (referrer) {
+        referrer.points = (referrer.points || 0) + 100;
+        referrer.coins = (referrer.coins || 0) + 100;
+        if (!referrer.referrals) referrer.referrals = [];
+        if (!referrer.referrals.includes(newUser.email)) referrer.referrals.push(newUser.email);
+        if (!referrer.achievements.includes('Referrer Star')) referrer.achievements.push('Referrer Star');
+        db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: referrer.id, text: `🎉 ${newUser.name} registered with your referral, you earned +100 Coins!`, isRead: false, createdAt: new Date().toISOString() });
+      }
+    }
+
+    db.notifications = db.notifications || [];
+    db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: newUser.id, text: `Welcome to RAWTHINK! Your account is ready.`, isRead: false, createdAt: new Date().toISOString() });
+    writeDB(db);
+    res.json({ success: true, user: newUser, simulatedEmailSent: credentialsEmail });
   });
 
   app.post('/api/auth/login', (req: Request, res: Response) => {
@@ -710,7 +827,14 @@ Pepsicola, Suncity, Kathmandu, Nepal`
       return res.status(401).json({ error: 'Incorrect credentials password. Please click Forgot Password to check your secure registers.' });
     }
 
-    res.json({ success: true, user });
+    // Generate a short-lived session token and persist
+    const token = crypto.randomBytes(24).toString('hex');
+    (user as any).sessionToken = token;
+    // ensure coins fallback is populated
+    (user as any).coins = (user as any).coins ?? (user as any).points ?? 0;
+    writeDB(db);
+
+    res.json({ success: true, user, token });
   });
 
   app.post('/api/auth/social-login', (req: Request, res: Response) => {
@@ -786,7 +910,7 @@ Pepsicola, Suncity, Kathmandu, Nepal`
     return res.status(400).json({ error: 'Unsupported social login provider.' });
   });
 
-  app.post('/api/auth/forgot-password', (req: Request, res: Response) => {
+  app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ error: 'Please provide Email address.' });
@@ -800,29 +924,33 @@ Pepsicola, Suncity, Kathmandu, Nepal`
       return res.status(404).json({ error: 'No user record matching this email was found in RAWTHINK registers.' });
     }
 
-    // Retrieve or set password
-    const userPassword = (user as any).password || 'rawthink123';
-    
+    const token = crypto.randomBytes(20).toString('hex');
+    const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+
+    (user as any).resetToken = token;
+    (user as any).resetTokenExpiresAt = expiresAt;
+    (user as any).resetTokenSentAt = new Date().toISOString();
+
+    const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/auth/reset-password?email=${encodeURIComponent(user.email)}&token=${token}`;
     const recoveryEmail = {
       to: user.email,
-      from: 'security-notify@rawthink.ai',
-      subject: '⚠️ RAWTHINK AI: Password Recovery Dispatch Request',
-      body: `Hi ${user.name},
+      from: SMTP_FROM,
+      subject: '🔐 RAWTHINK AI: Password Reset Instructions',
+      body: `Hello ${user.name},
 
-You have requested password recovery coordinates for your RAWTHINK AI online account.
+A password reset request was received for your RAWTHINK AI account.
 
------------------------------------------
-YOUR RETRIEVED ACCOUNT ACCESS CODES:
------------------------------------------
-Registered Email : ${user.email}
-Secure Password  : ${userPassword}
------------------------------------------
+Please use the code below to reset your password, or click the link if your email client supports it:
 
-If you did not make this request, please safely secure your account immediately inside the online platform.
+Reset Code: ${token}
 
-Clear. Actionable. Coded.
-RAWTHINK AI Core Infrastructure Team
-Pepsicola, Suncity, Kathmandu, Nepal`
+Reset Link: ${resetLink}
+
+This code will expire in 1 hour.
+
+If you did not request this, just ignore this message and your existing password will remain secure.
+
+RAWTHINK AI Support Team`
     };
 
     if (!db.sentMailsLog) {
@@ -837,11 +965,58 @@ Pepsicola, Suncity, Kathmandu, Nepal`
 
     writeDB(db);
 
-    res.json({ 
-      success: true, 
-      message: 'Account recovery email simulated successfully!',
-      simulatedEmailSent: recoveryEmail
+    let actualSendResult: any = null;
+    if (emailTransporter) {
+      try {
+        actualSendResult = await emailTransporter.sendMail({
+          from: SMTP_FROM,
+          to: user.email,
+          subject: recoveryEmail.subject,
+          text: recoveryEmail.body
+        });
+      } catch (mailErr: any) {
+        console.warn('SMTP email send failed:', mailErr?.message || mailErr);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Password reset instruction generated successfully.',
+      simulatedEmailSent: recoveryEmail,
+      emailSent: !!actualSendResult,
+      smtpInfo: actualSendResult ? { accepted: actualSendResult.accepted } : null
     });
+  });
+
+  app.post('/api/auth/reset-password', (req: Request, res: Response) => {
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ error: 'Email, token, and new password are all required.' });
+    }
+
+    const db = readDB();
+    const emailClean = email.toLowerCase().trim();
+    const user = db.users.find((u: User) => u.email === emailClean);
+    if (!user) {
+      return res.status(404).json({ error: 'Could not find a user with that email address.' });
+    }
+
+    if ((user as any).resetToken !== token || !(user as any).resetTokenExpiresAt) {
+      return res.status(400).json({ error: 'Invalid or expired reset token.' });
+    }
+
+    if (Date.now() > (user as any).resetTokenExpiresAt) {
+      return res.status(400).json({ error: 'Reset token has expired. Please request a new link.' });
+    }
+
+    (user as any).password = newPassword;
+    delete (user as any).resetToken;
+    delete (user as any).resetTokenExpiresAt;
+    delete (user as any).resetTokenSentAt;
+
+    writeDB(db);
+
+    res.json({ success: true, message: 'Your password has been updated successfully. Please log in with your new credentials.' });
   });
 
   // ---------------- GENERAL USER API ----------------
@@ -926,6 +1101,123 @@ Pepsicola, Suncity, Kathmandu, Nepal`
     res.json({ success: true, enrollment: newEnrollment });
   });
 
+  // Purchase course using coins (instant approval)
+  app.post('/api/courses/purchase', (req: Request, res: Response) => {
+    const { userId, courseId } = req.body;
+    if (!userId || !courseId) return res.status(400).json({ error: 'userId and courseId are required.' });
+
+    const db = readDB();
+    const user = db.users.find((u: User) => u.id === userId);
+    const course = db.courses.find((c: Course) => c.id === courseId);
+    if (!user || !course) return res.status(404).json({ error: 'User or course not found.' });
+
+    // Prevent double enrollment
+    const existing = db.enrollments.find((e: Enrollment) => e.userId === userId && e.courseId === courseId && e.status === 'approved');
+    if (existing) return res.status(400).json({ error: 'You are already enrolled in this course.' });
+
+    const cost = course.price;
+    const balance = (user.coins ?? user.points ?? 0);
+    if (balance < cost) return res.status(400).json({ error: 'Insufficient coins to purchase this course.' });
+
+    // Deduct and create enrollment
+    user.coins = balance - cost;
+    user.coinsInvested = (user.coinsInvested || 0) + cost;
+
+    const newEnrollment: Enrollment = {
+      id: 'en-' + Math.random().toString(36).substring(2, 9),
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      courseId: course.id,
+      courseTitle: course.title,
+      price: cost,
+      transactionId: 'COIN-' + Math.random().toString(36).substring(2, 9),
+      status: 'approved',
+      createdAt: new Date().toISOString()
+    };
+
+    db.enrollments.push(newEnrollment);
+    db.notifications = db.notifications || [];
+    db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: user.id, text: `✅ You purchased ${course.title} using ${cost} coins.`, isRead: false, createdAt: new Date().toISOString() });
+
+    writeDB(db);
+    res.json({ success: true, enrollment: newEnrollment, coins: user.coins, coinsInvested: user.coinsInvested });
+  });
+
+  // ---------------- eSewa Quick Checkout Flow ----------------
+  app.post('/api/esewa/create', (req: Request, res: Response) => {
+    const { userId, courseId } = req.body;
+    if (!userId || !courseId) return res.status(400).json({ error: 'userId and courseId are required.' });
+
+    const db = readDB();
+    const user = db.users.find((u: User) => u.id === userId);
+    const course = db.courses.find((c: Course) => c.id === courseId);
+    if (!user || !course) return res.status(404).json({ error: 'User or course not found.' });
+
+    const pid = 'esewa-' + Math.random().toString(36).substring(2, 9);
+    const amount = course.price;
+    const tAmt = amount;
+    const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+    const su = `${APP_URL}/api/esewa/success`;
+    const fu = `${APP_URL}/api/esewa/fail`;
+    const scd = process.env.ESEWA_MERCHANT_CODE || 'EPAYTEST';
+
+    if (!db.pendingPayments) db.pendingPayments = [];
+    db.pendingPayments.push({ pid, userId, courseId, amount, status: 'created', createdAt: new Date().toISOString() });
+    writeDB(db);
+
+    return res.json({ success: true, pid, amount, tAmt, scd, su, fu, esewaUrl: process.env.ESEWA_URL || 'https://uat.esewa.com.np/epay/main' });
+  });
+
+  app.get('/api/esewa/success', (req: Request, res: Response) => {
+    const pid = String(req.query.pid || '');
+    const db = readDB();
+    const rec = (db.pendingPayments || []).find((p: any) => p.pid === pid);
+
+    if (rec) {
+      rec.status = 'success';
+      const user = db.users.find((u: any) => u.id === rec.userId);
+      const course = db.courses.find((c: any) => c.id === rec.courseId);
+      if (user && course) {
+        const newEnrollment: Enrollment = {
+          id: 'en-' + Math.random().toString(36).substring(2, 9),
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          courseId: course.id,
+          courseTitle: course.title,
+          price: rec.amount,
+          transactionId: pid,
+          status: 'approved',
+          createdAt: new Date().toISOString()
+        };
+        db.enrollments.push(newEnrollment);
+        db.notifications.push({
+          id: 'notif-' + Math.random().toString(36).substring(2, 9),
+          userId: 'admin-1',
+          text: `💸 eSewa payment success: ${user.name} for ${course.title} (Rs. ${rec.amount})`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+      writeDB(db);
+      return res.send(`<!doctype html><html><body><script>localStorage.setItem('rawthink_lastPayment', JSON.stringify({msg:'Payment successful. Enrollment recorded.', type:'success'}));window.location.href='/';</script></body></html>`);
+    }
+
+    return res.send(`<!doctype html><html><body><script>localStorage.setItem('rawthink_lastPayment', JSON.stringify({msg:'Payment completed (unverified).', type:'success'}));window.location.href='/';</script></body></html>`);
+  });
+
+  app.get('/api/esewa/fail', (req: Request, res: Response) => {
+    const pid = String(req.query.pid || '');
+    const db = readDB();
+    const rec = (db.pendingPayments || []).find((p: any) => p.pid === pid);
+    if (rec) {
+      rec.status = 'failed';
+      writeDB(db);
+    }
+    return res.send(`<!doctype html><html><body><script>localStorage.setItem('rawthink_lastPayment', JSON.stringify({msg:'Payment failed or cancelled', type:'error'}));window.location.href='/';</script></body></html>`);
+  });
+
   // ---------------- FREE RESOURCE DOWNLOADS TRACKER ----------------
 
   app.post('/api/resources/unlock', (req: Request, res: Response) => {
@@ -940,29 +1232,93 @@ Pepsicola, Suncity, Kathmandu, Nepal`
       return res.status(404).json({ error: 'Student profile not found.' });
     }
 
-    if ((user.points || 0) < 50) {
+    // Determine cost and gating rules
+    const COST = 50;
+    const resourceIndex = (db.resources || []).findIndex((r: any) => r.id === resourceId);
+
+    // The first two resources are free; ensure server-side parity with UI
+    if (resourceIndex >= 0 && resourceIndex < 2) {
+      if (!user.unlockedResources) user.unlockedResources = [];
+      if (!user.unlockedResources.includes(resourceId)) user.unlockedResources.push(resourceId);
+      writeDB(db);
+      return res.json({ success: true, coins: user.coins ?? user.points ?? 0, unlockedResources: user.unlockedResources, badges: user.badges });
+    }
+
+    // Enforce soft-limit: max 2 resource unlocks unless referred >=5 or invested >=50 coins
+    const unlockedCount = (user.unlockedResources || []).length;
+    const referralsCount = (user.referrals || []).length || 0;
+    const invested = (user.coinsInvested || 0) || 0;
+
+    if (unlockedCount >= 2 && referralsCount < 5 && invested < 50) {
+      return res.status(403).json({ error: 'Unlock limit reached. Refer 5 friends or invest 50 coins to unlock more than 2 resources.' });
+    }
+
+    const balance = (user.coins ?? user.points ?? 0);
+    if (balance < COST) {
       return res.status(400).json({ error: 'Insufficient coins! Unlock costs 50 coins.' });
     }
 
-    user.points = (user.points || 0) - 50;
-    if (!user.unlockedResources) {
-      user.unlockedResources = [];
-    }
-    if (!user.unlockedResources.includes(resourceId)) {
-      user.unlockedResources.push(resourceId);
+    // Idempotent: do not double-charge for same resource
+    if (!user.unlockedResources) user.unlockedResources = [];
+    if (user.unlockedResources.includes(resourceId)) {
+      return res.json({ success: true, coins: balance, unlockedResources: user.unlockedResources, badges: user.badges });
     }
 
-    if (!user.badges.includes('Knowledge Seeker')) {
-      user.badges.push('Knowledge Seeker');
-    }
+    // Deduct coins and mark unlocked
+    user.coins = balance - COST;
+    // keep legacy points in sync minimally for UI areas still reading points
+    user.points = user.points ?? 0;
+    user.points = user.points - 0; // leave points unchanged
+    user.coinsInvested = (user.coinsInvested || 0) + COST;
+    user.unlockedResources.push(resourceId);
+
+    if (!user.badges.includes('Knowledge Seeker')) user.badges.push('Knowledge Seeker');
 
     writeDB(db);
-    res.json({ 
-      success: true, 
-      points: user.points, 
-      unlockedResources: user.unlockedResources,
-      badges: user.badges 
-    });
+    res.json({ success: true, coins: user.coins, coinsInvested: user.coinsInvested, unlockedResources: user.unlockedResources, badges: user.badges });
+  });
+
+  // Unlock AI tool with coins
+  app.post('/api/tools/unlock', (req: Request, res: Response) => {
+    const { userId, toolId } = req.body;
+    if (!userId || !toolId) return res.status(400).json({ error: 'User ID and Tool ID are required.' });
+
+    const db = readDB();
+    const user = db.users.find((u: User) => u.id === userId);
+    if (!user) return res.status(404).json({ error: 'Student profile not found.' });
+
+    const tool = (db.tools || []).find((t: any) => t.id === toolId);
+    if (!tool) return res.status(404).json({ error: 'Tool not found.' });
+
+    const COST = 50;
+    if (!user.unlockedTools) user.unlockedTools = [];
+
+    // Soft-limit: max 2 tools unlocked unless referred >=5 or invested >=50 coins
+    const unlockedToolsCount = (user.unlockedTools || []).length;
+    const referralsCount = (user.referrals || []).length || 0;
+    const invested = (user.coinsInvested || 0) || 0;
+    if (unlockedToolsCount >= 2 && referralsCount < 5 && invested < 50) {
+      return res.status(403).json({ error: 'Unlock limit reached. Refer 5 friends or invest 50 coins to unlock more than 2 AI tools.' });
+    }
+
+    const balance = (user.coins ?? user.points ?? 0);
+    if (balance < COST) return res.status(400).json({ error: 'Insufficient coins! Unlock costs 50 coins.' });
+
+    if (user.unlockedTools.includes(toolId)) {
+      return res.json({ success: true, coins: balance, unlockedTools: user.unlockedTools, badges: user.badges });
+    }
+
+    user.coins = balance - COST;
+    user.coinsInvested = (user.coinsInvested || 0) + COST;
+    user.unlockedTools.push(toolId);
+
+    if (!user.badges.includes('AI Explorer')) user.badges.push('AI Explorer');
+
+    db.notifications = db.notifications || [];
+    db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: user.id, text: `🔓 You unlocked tool: ${tool.name} using 50 coins.`, isRead: false, createdAt: new Date().toISOString() });
+
+    writeDB(db);
+    res.json({ success: true, coins: user.coins, coinsInvested: user.coinsInvested, unlockedTools: user.unlockedTools, badges: user.badges });
   });
 
   app.post('/api/feedback', (req: Request, res: Response) => {
@@ -1570,6 +1926,84 @@ Pepsicola, Suncity, Kathmandu, Nepal`
 
     writeDB(db);
     res.json({ success: true, enrollment });
+  });
+
+  // Backwards-compatible alias for admin decision endpoint
+  app.post('/api/admin/decision', (req: Request, res: Response) => {
+    const { enrollmentId, decision, adminId } = req.body; // decision: 'approved' | 'rejected'
+    if (!enrollmentId || !decision) {
+      return res.status(400).json({ error: 'Missing parameters' });
+    }
+
+    const db = readDB();
+    const admin = db.users.find((u: User) => u.id === adminId);
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin-only module authorization failed.' });
+    }
+
+    const enrollment = db.enrollments.find((e: Enrollment) => e.id === enrollmentId);
+    if (!enrollment) {
+      return res.status(404).json({ error: 'Enrollment reference not found' });
+    }
+
+    enrollment.status = decision;
+
+    const student = db.users.find((u: User) => u.id === enrollment.userId);
+    if (student) {
+      if (decision === 'approved') {
+        const approvedCount = db.enrollments.filter((e: Enrollment) => e.userId === student.id && e.status === 'approved').length;
+        let enrollmentCoins = 100;
+        if (approvedCount === 2) {
+          enrollmentCoins = 120;
+        } else if (approvedCount >= 3) {
+          enrollmentCoins = 299;
+        }
+        student.points = (student.points || 0) + enrollmentCoins;
+        student.coins = (student.coins || 0) + enrollmentCoins;
+
+        if (!student.badges.includes('Scholar')) student.badges.push('Scholar');
+
+        db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: student.id, text: `🎉 CONGRATULATIONS! Your payment of Rs. ${enrollment.price} for "${enrollment.courseTitle}" has been verified!`, isRead: false, createdAt: new Date().toISOString() });
+
+        const session = db.schedule.find((s: SessionSchedule) => s.courseId === enrollment.courseId);
+        if (session && session.seatsRemaining > 0) session.seatsRemaining -= 1;
+      } else {
+        db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: student.id, text: `❌ Your payment for "${enrollment.courseTitle}" could not be confirmed.`, isRead: false, createdAt: new Date().toISOString() });
+      }
+    }
+
+    writeDB(db);
+    res.json({ success: true, enrollment });
+  });
+
+  // Admin announcement broadcast
+  app.post('/api/admin/announce', (req: Request, res: Response) => {
+    const { adminId, title, content, pinned } = req.body;
+    if (!adminId || !title || !content) return res.status(400).json({ error: 'Missing parameters' });
+
+    const db = readDB();
+    const admin = db.users.find((u: User) => u.id === adminId);
+    if (!admin || admin.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
+
+    const ann = {
+      id: 'ann-' + Math.random().toString(36).substring(2, 9),
+      adminId: admin.id,
+      title: sanitizeStr(title),
+      content: sanitizeStr(content),
+      pinned: !!pinned,
+      createdAt: new Date().toISOString()
+    };
+
+    db.announcements = db.announcements || [];
+    db.announcements.unshift(ann);
+
+    // Push a lightweight notification to all users
+    (db.users || []).forEach((u: User) => {
+      db.notifications.push({ id: 'notif-' + Math.random().toString(36).substring(2, 9), userId: u.id, text: `📢 ${ann.title} - ${ann.content.slice(0, 120)}`, isRead: false, createdAt: new Date().toISOString() });
+    });
+
+    writeDB(db);
+    res.json({ success: true, announcement: ann });
   });
 
   // Admin issue digital certificate manually override

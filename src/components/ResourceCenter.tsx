@@ -203,10 +203,11 @@ export default function ResourceCenter({
         return;
       }
 
-      const confirmUnlock = window.confirm(`🪙 Unlock "${res.title}" permanently for 50 Coins?\nYour current coin balance: ${currentUser.points || 0} Coins.`);
+      const confirmUnlock = window.confirm(`🪙 Unlock "${res.title}" permanently for 50 Coins?\nYour current coin balance: ${currentUser?.coins ?? currentUser?.points ?? 0} Coins.`);
       if (!confirmUnlock) return;
 
-      if ((currentUser.points || 0) < 50) {
+      const balanceNow = (currentUser?.coins ?? currentUser?.points ?? 0);
+      if (balanceNow < 50) {
         showNotification('❌ Insufficient Coins! This guide costs 50 coins. Register/Enroll for a class or refer friends to quickly earn coins!', 'error');
         return;
       }
@@ -230,9 +231,10 @@ export default function ResourceCenter({
         if (onUserUpdate) {
           onUserUpdate({
             ...currentUser,
-            points: data.points,
-            unlockedResources: data.unlockedResources,
-            badges: data.badges
+            coins: data.coins ?? currentUser.coins,
+            coinsInvested: data.coinsInvested ?? currentUser.coinsInvested,
+            unlockedResources: data.unlockedResources ?? currentUser.unlockedResources ?? [],
+            badges: data.badges ?? currentUser.badges ?? []
           });
         }
 
@@ -260,10 +262,11 @@ export default function ResourceCenter({
       // Sync points back to client because download tracks points tracker too (+5 study points)
       const data = await resp.json();
       if (currentUser && onUserUpdate) {
+        const existingBadges = currentUser.badges ?? [];
         onUserUpdate({
           ...currentUser,
           points: (currentUser.points || 0) + 5,
-          badges: currentUser.badges.includes('Knowledge Seeker') ? currentUser.badges : [...currentUser.badges, 'Knowledge Seeker']
+          badges: existingBadges.includes('Knowledge Seeker') ? existingBadges : [...existingBadges, 'Knowledge Seeker']
         });
       }
 

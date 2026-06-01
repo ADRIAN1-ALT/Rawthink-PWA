@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Course, Enrollment, ResourceDownload, AITool, SessionSchedule } from './types';
 import Navbar from './components/Navbar';
 import LandingHero from './components/LandingHero';
+import FeaturedWorkshops from './components/FeaturedWorkshops';
 import InteractiveFeatures from './components/InteractiveFeatures';
 import CourseCatalog from './components/CourseCatalog';
 import ToolsDirectory from './components/ToolsDirectory';
@@ -100,6 +101,21 @@ export default function App() {
     loadAdminData();
   }, [currentUser]);
 
+  // Automatically open auth when a password reset link is visited
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const pathname = window.location.pathname;
+    const search = window.location.search;
+
+    if (pathname.startsWith('/auth')) {
+      setView('auth');
+    }
+
+    if (pathname === '/auth/reset-password' && search) {
+      setView('auth');
+    }
+  }, []);
+
   // Hook into browser PWA installer hooks
   useEffect(() => {
     const handleBeforePrompt = (e: Event) => {
@@ -109,6 +125,22 @@ export default function App() {
     };
     window.addEventListener('beforeinstallprompt', handleBeforePrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforePrompt);
+  }, []);
+
+  // Check for payment callback message set by server (eSewa redirect)
+  useEffect(() => {
+    try {
+      const payload = localStorage.getItem('rawthink_lastPayment');
+      if (payload) {
+        const obj = JSON.parse(payload as string);
+        if (obj && obj.msg) {
+          showNotification(obj.msg, obj.type || 'success');
+        }
+        localStorage.removeItem('rawthink_lastPayment');
+      }
+    } catch (e) {
+      // ignore silent JSON errors
+    }
   }, []);
 
   const showNotification = (msg: string, type: 'success' | 'error' | 'info') => {
@@ -247,6 +279,14 @@ export default function App() {
               }}
             />
 
+            {/* Detailed Featured Workshops Section (eSewa enabled) */}
+            <FeaturedWorkshops
+              courses={courses}
+              currentUser={currentUser}
+              setView={setView}
+              showNotification={showNotification}
+            />
+
             {/* Curriculum Showcase Features list */}
             <InteractiveFeatures />
 
@@ -259,6 +299,7 @@ export default function App() {
               showNotification={showNotification}
               purchasedCourseIds={purchasedCourseIds}
               pendingCourseIds={pendingCourseIds}
+              onUserUpdate={handleLoginSuccess}
             />
 
             {/* Testimonials Static Carousel block */}
@@ -369,6 +410,9 @@ export default function App() {
               tools={tools} 
               hasPremiumUnlimitedAccess={hasPremiumUnlimitedAccess}
               onUnlockTrigger={() => setView('courses')}
+              currentUser={currentUser}
+              showNotification={showNotification}
+              onUserUpdate={handleLoginSuccess}
             />
           </div>
         )}

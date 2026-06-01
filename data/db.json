@@ -7,7 +7,7 @@
       "phone": "9841234567",
       "role": "admin",
       "referralCode": "RAWADMIN",
-      "points": 1000,
+      "points": 1005,
       "badges": [
         "Founder",
         "AI Expert"
@@ -15,8 +15,11 @@
       "streak": 7,
       "createdAt": "2026-05-15T00:00:00Z",
       "achievements": [
-        "Community Architect"
-      ]
+        "Community Architect",
+        "Knowledge Seeker"
+      ],
+      "sessionToken": "46006556b6718b769adedf68b936a0fb694d93cb00180d85",
+      "coins": 1000
     },
     {
       "id": "student-demo",
@@ -33,7 +36,9 @@
       "createdAt": "2026-05-30T10:00:00Z",
       "achievements": [
         "Account Registered"
-      ]
+      ],
+      "sessionToken": "71fd843a0973a145e850d024bce1a8ae39ddad14d9b46af8",
+      "coins": 40
     },
     {
       "id": "u-d4ci7xi",
@@ -202,6 +207,39 @@
       "referredDownloads": 0,
       "selectedTimeSlots": {},
       "password": "apple-linked"
+    },
+    {
+      "id": "u-2w1mhby",
+      "name": "student sharma",
+      "email": "student11@gmail.com",
+      "phone": "9292833822",
+      "role": "student",
+      "referralCode": "STUD33",
+      "points": 150,
+      "coins": 0,
+      "badges": [
+        "Early Bird",
+        "Scholar",
+        "Knowledge Seeker",
+        "AI Explorer"
+      ],
+      "streak": 1,
+      "createdAt": "2026-06-01T01:02:44.014Z",
+      "achievements": [
+        "Account Registered"
+      ],
+      "referrals": [],
+      "referredDownloads": 0,
+      "selectedTimeSlots": {},
+      "password": "heymansup",
+      "unlockedResources": [
+        "res-3",
+        "res-4"
+      ],
+      "unlockedTools": [
+        "tool-2"
+      ],
+      "coinsInvested": 100
     }
   ],
   "courses": [
@@ -283,6 +321,19 @@
       "remarks": "Enrolling in Saturday Bootcamp!",
       "status": "approved",
       "createdAt": "2026-05-30T11:00:00Z"
+    },
+    {
+      "id": "en-s9e0ve7",
+      "userId": "u-2w1mhby",
+      "userName": "student sharma",
+      "userEmail": "student11@gmail.com",
+      "courseId": "course-1",
+      "courseTitle": "AI Foundations Bootcamp",
+      "price": 299,
+      "transactionId": "234234234",
+      "screenshotUrl": "data:image/png;base64,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",
+      "status": "approved",
+      "createdAt": "2026-06-01T01:04:25.022Z"
     }
   ],
   "tools": [
@@ -555,7 +606,7 @@
       "id": "res-5",
       "title": "Nepal-centric AI Career & Business Roadmap",
       "category": "Ebook",
-      "downloadsCount": 304,
+      "downloadsCount": 305,
       "fileSize": "2.1 MB",
       "downloadUrl": "#"
     },
@@ -576,7 +627,7 @@
       "instructor": "Er. Sandesh Shrestha",
       "date": "2026-06-06",
       "time": "14:00 - 15:00",
-      "seatsRemaining": 18,
+      "seatsRemaining": 17,
       "totalSeats": 50
     },
     {
@@ -723,5 +774,55 @@
       "createdAt": "2026-05-31T00:05:00Z"
     }
   ],
-  "notifications": []
+  "notifications": [
+    {
+      "id": "notif-tk6b6rs",
+      "userId": "u-2w1mhby",
+      "text": "👋 Welcome to RAWTHINK AI platform! Your login credentials have been dispatched to your Gmail context: student11@gmail.com",
+      "isRead": false,
+      "createdAt": "2026-06-01T01:02:44.014Z"
+    },
+    {
+      "id": "notif-r6njapm",
+      "userId": "admin-1",
+      "text": "💸 Pending eSewa payment submitted by student sharma for AI Foundations Bootcamp (Rs. 299)",
+      "isRead": false,
+      "createdAt": "2026-06-01T01:04:25.022Z"
+    },
+    {
+      "id": "notif-dgsli6q",
+      "userId": "u-2w1mhby",
+      "text": "🎉 CONGRATULATIONS! Your payment of Rs. 299 for \"AI Foundations Bootcamp\" has been verified! Welcome to class!",
+      "isRead": false,
+      "createdAt": "2026-06-01T01:04:56.888Z"
+    },
+    {
+      "id": "notif-pmj4kr2",
+      "userId": "u-2w1mhby",
+      "text": "🔓 You unlocked tool: Jasper AI using 50 coins.",
+      "isRead": false,
+      "createdAt": "2026-06-01T01:26:17.843Z"
+    }
+  ],
+  "pendingPayments": [],
+  "sentMailsLog": [
+    {
+      "id": "mail-m2vq6l1",
+      "userId": "student-demo",
+      "timestamp": "2026-05-31T14:32:51.545Z",
+      "to": "student@gmail.com",
+      "from": "security-notify@rawthink.ai",
+      "subject": "⚠️ RAWTHINK AI: Password Recovery Dispatch Request",
+      "body": "Hi Prajwal Shrestha,\n\nYou have requested password recovery coordinates for your RAWTHINK AI online account.\n\n-----------------------------------------\nYOUR RETRIEVED ACCOUNT ACCESS CODES:\n-----------------------------------------\nRegistered Email : student@gmail.com\nSecure Password  : rawthink123\n-----------------------------------------\n\nIf you did not make this request, please safely secure your account immediately inside the online platform.\n\nClear. Actionable. Coded.\nRAWTHINK AI Core Infrastructure Team\nPepsicola, Suncity, Kathmandu, Nepal"
+    },
+    {
+      "id": "mail-ipphjgn",
+      "userId": "u-2w1mhby",
+      "timestamp": "2026-06-01T01:02:44.014Z",
+      "to": "student11@gmail.com",
+      "from": "credentials-daemon@rawthink.ai",
+      "subject": "🔑 Your RAWTHINK AI Academy Secure Credentials Generated!",
+      "body": "Dear student sharma,\n\nYour RAWTHINK AI student account has been successfully generated by our server-side secure enrollment engine.\n\n-----------------------------------------\nSECURE LOGIN CREDENTIALS:\n-----------------------------------------\nEmail / Username : student11@gmail.com\nProfile Password : heymansup\nYour Invite Code : STUD33\n-----------------------------------------\n\nNepal PWA Mobile App Access:\nThis app supports progressive loading! Click the \"Download App\" button on your mobile device browser header to place RAWTHINK AI directly onto your home screen.\n\nMaster AI. Build Faster. Stay Ahead.\nBest Regards,\nThe RAWTHINK Automated Credentials System\nPepsicola, Suncity, Kathmandu, Nepal"
+    }
+  ]
 }

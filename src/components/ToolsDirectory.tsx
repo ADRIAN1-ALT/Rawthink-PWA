@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AITool } from '../types';
+import { AITool, User } from '../types';
 import { 
   Search, Filter, ExternalLink, Code, Sparkles, MessageSquare, 
   Palette, BookOpen, Tv, Briefcase, Cpu, Lock, Unlock, Zap
@@ -9,11 +9,15 @@ interface ToolsDirectoryProps {
   tools: AITool[];
   hasPremiumUnlimitedAccess?: boolean;
   onUnlockTrigger?: () => void;
+  currentUser?: User | null;
+  showNotification?: (msg: string, type: 'success'|'error'|'info') => void;
+  onUserUpdate?: (user: User) => void;
 }
 
-export default function ToolsDirectory({ tools, hasPremiumUnlimitedAccess = false, onUnlockTrigger }: ToolsDirectoryProps) {
+export default function ToolsDirectory({ tools, hasPremiumUnlimitedAccess = false, onUnlockTrigger, currentUser, showNotification, onUserUpdate }: ToolsDirectoryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [unlockingToolId, setUnlockingToolId] = useState<string | null>(null);
 
   const categories = ['All', 'Writing', 'Image', 'Video', 'Coding', 'Research', 'Presentation', 'Productivity'];
 
@@ -30,10 +34,51 @@ export default function ToolsDirectory({ tools, hasPremiumUnlimitedAccess = fals
   };
 
   // We unlock 'ChatGPT' and 'Perplexity AI' for free tier users, others require lock
-  const isToolUnlocked = (toolName: string) => {
+  const isToolUnlocked = (tool: AITool) => {
     if (hasPremiumUnlimitedAccess) return true;
-    const nameLower = toolName.toLowerCase();
-    return nameLower.includes('chatgpt') || nameLower.includes('perplexity');
+    const nameLower = tool.name.toLowerCase();
+    if (nameLower.includes('chatgpt') || nameLower.includes('perplexity')) return true;
+    if (currentUser && currentUser.unlockedTools && currentUser.unlockedTools.includes(tool.id)) return true;
+    return false;
+  };
+
+  const triggerToolUnlock = async (tool: AITool) => {
+    if (!currentUser) {
+      showNotification && showNotification('Please login to unlock tools with coins.', 'info');
+      return;
+    }
+
+    const balanceNow = (currentUser.coins ?? currentUser.points ?? 0);
+    const confirmUnlock = window.confirm(`🪙 Unlock "${tool.name}" permanently for 50 Coins?\nYour current coin balance: ${balanceNow} Coins.`);
+    if (!confirmUnlock) return;
+
+    if (balanceNow < 50) {
+      showNotification && showNotification('❌ Insufficient Coins! This tool costs 50 coins.', 'error');
+      return;
+    }
+
+    setUnlockingToolId(tool.id);
+    try {
+      const resp = await fetch('/api/tools/unlock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, toolId: tool.id }) });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to unlock tool');
+
+      if (onUserUpdate) {
+        onUserUpdate({
+          ...currentUser,
+          coins: data.coins ?? currentUser.coins,
+          coinsInvested: data.coinsInvested ?? currentUser.coinsInvested,
+          unlockedTools: data.unlockedTools ?? currentUser.unlockedTools,
+          badges: data.badges ?? currentUser.badges
+        });
+      }
+
+      showNotification && showNotification(`🎉 Unlocked ${tool.name} successfully!`, 'success');
+    } catch (err: any) {
+      showNotification && showNotification(err.message || 'Unlock failed.', 'error');
+    } finally {
+      setUnlockingToolId(null);
+    }
   };
 
   const filteredTools = tools.filter((tool) => {
@@ -146,6 +191,15 @@ export default function ToolsDirectory({ tools, hasPremiumUnlimitedAccess = fals
                         <p className="text-[10px] text-amber-800 bg-amber-100 border border-amber-300 px-2 py-1 rounded-lg font-black mt-2 max-w-[165px] leading-tight text-center shadow-sm">
                           ⚠️ ENROLLING IN A CLASS OR 10 REFERRALS REQUIRED
                         </p>
+                        <div className="mt-3">
+                          <button
+                            onClick={() => triggerToolUnlock(tool)}
+                            disabled={unlockingToolId === tool.id}
+                            className="mt-2 px-4 py-1.5 bg-[#C19A6B] text-white text-[10px] hover:bg-[#5C4033] rounded-full font-bold transition shadow-sm cursor-pointer"
+                          >
+                            {unlockingToolId === tool.id ? 'Unlocking...' : 'Unlock for 50 Coins'}
+                          </button>
+                        </div>
                       </div>
                     )}
 

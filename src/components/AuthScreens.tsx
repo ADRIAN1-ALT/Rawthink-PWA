@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { Mail, Lock, Phone, User as UserIcon, Sparkles, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, X, ExternalLink, Apple, Globe2, Smartphone } from 'lucide-react';
 
@@ -20,10 +20,26 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
 
   // Password Recovery State
   const [forgotEmail, setForgotEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [awaitingReset, setAwaitingReset] = useState(false);
 
   // Loader state
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('email');
+    const tokenParam = params.get('token');
+    if (emailParam && tokenParam) {
+      setActiveTab('forgot');
+      setForgotEmail(emailParam);
+      setResetToken(tokenParam);
+      setAwaitingReset(true);
+    }
+  }, []);
 
   // Phone sign-in state
   const [phoneLoginVisible, setPhoneLoginVisible] = useState(false);
@@ -197,10 +213,50 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
       }
 
       setSimulatedEmail(data.simulatedEmailSent);
-      showNotification('Your secure password credentials have been found & emailed to your Gmail!', 'success');
-      setActiveTab('login');
+      showNotification('Password reset instructions sent successfully! Check your email for the token.', 'success');
+      setAwaitingReset(true);
     } catch (err: any) {
       showNotification(err.message || 'Password retrieval error. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim() || !resetToken.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+      showNotification('Email, token, and both password fields are required.', 'error');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showNotification('Passwords do not match. Please retype both fields.', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: forgotEmail.trim(),
+          token: resetToken.trim(),
+          newPassword: newPassword.trim()
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || 'Reset password failed.');
+      }
+      showNotification(data.message || 'Password reset successful. Please sign in.', 'success');
+      setAwaitingReset(false);
+      setActiveTab('login');
+      setResetToken('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setForgotEmail('');
+    } catch (err: any) {
+      showNotification(err.message || 'Password reset failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -500,9 +556,9 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
 
         {/* FORGOT PASSWORD SECTION */}
         {activeTab === 'forgot' && (
-          <form onSubmit={handleForgotSimulation} className="space-y-4">
+          <form onSubmit={awaitingReset ? handleResetPassword : handleForgotSimulation} className="space-y-4">
             <p className="text-xs text-brand-dark/75 leading-relaxed">
-              Enter your registered corporate email coordinates below. We will dispatch a digital pass-reset coordinate link immediately.
+              Enter your registered email below. We will dispatch a reset token to your inbox, then let you choose a new password.
             </p>
             
             <div>
@@ -520,10 +576,56 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
               </div>
             </div>
 
+            {awaitingReset && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-brand-dark mb-1 uppercase tracking-wider">Reset Token</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter the code from your email"
+                    value={resetToken}
+                    onChange={(e) => setResetToken(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-brand-cream/15 border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-brand-dark mb-1 uppercase tracking-wider">New Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="New password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-brand-cream/15 border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-brand-dark mb-1 uppercase tracking-wider">Confirm Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Confirm password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-brand-cream/15 border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="flex space-x-3 pt-2">
               <button
                 type="button"
-                onClick={() => setActiveTab('login')}
+                onClick={() => {
+                  setActiveTab('login');
+                  setAwaitingReset(false);
+                  setResetToken('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
                 className="flex-1 py-2.5 border border-brand-primary/25 text-brand-dark rounded-xl text-xs font-semibold text-center mt-1 sm:mt-0"
               >
                 Go Back
@@ -533,7 +635,7 @@ export default function AuthScreens({ onLoginSuccess, showNotification, setView 
                 disabled={loading}
                 className="flex-1 py-2.5 bg-brand-primary text-white rounded-xl text-xs font-bold text-center mt-1 sm:mt-0"
               >
-                {loading ? 'Retrieving...' : 'Send Reset Token'}
+                {loading ? (awaitingReset ? 'Updating...' : 'Sending...') : (awaitingReset ? 'Reset Password' : 'Send Reset Token')}
               </button>
             </div>
           </form>
