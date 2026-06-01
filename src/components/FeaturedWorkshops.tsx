@@ -12,6 +12,17 @@ interface FeaturedWorkshopsProps {
 export default function FeaturedWorkshops({ courses, currentUser, setView, showNotification }: FeaturedWorkshopsProps) {
   const visible = courses && courses.length > 0;
 
+  // Community referral discounts (mirror logic in CourseCatalog)
+  const referCount = currentUser?.referrals?.length || 0;
+  let discountPercent = 0;
+  if (referCount >= 10) discountPercent = 100;
+  else if (referCount >= 6) discountPercent = 30;
+  else if (referCount >= 4) discountPercent = 20;
+  const getDiscountedPrice = (price: number) => {
+    const discountAmount = Math.round((price * discountPercent) / 100);
+    return Math.max(0, price - discountAmount);
+  };
+
   const handlePayNow = (courseId: string) => {
     // Use the manual eSewa QR flow: set intended course and redirect user
     // to the courses view where they can upload a receipt screenshot.
@@ -51,7 +62,19 @@ export default function FeaturedWorkshops({ courses, currentUser, setView, showN
             <div key={course.id} className="bg-white border border-[#F7F1E8] rounded-2xl p-6 shadow-sm">
               <div className="flex items-start justify-between">
                 <h3 className="font-bold text-lg text-[#5C4033]">{course.title}</h3>
-                <div className="text-xl font-extrabold text-[#5C4033]">Rs. {course.price}</div>
+                <div className="text-right">
+                  {discountPercent > 0 ? (
+                    <div className="text-right">
+                      <div className="text-[10px] font-extrabold text-emerald-700 uppercase">🎉 {discountPercent}% Off</div>
+                      <div className="text-xl font-extrabold text-[#5C4033]">
+                        <span className="line-through text-[#5C4033]/40 mr-2">Rs. {course.price}</span>
+                        <span>Rs. {getDiscountedPrice(course.price)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xl font-extrabold text-[#5C4033]">Rs. {course.price}</div>
+                  )}
+                </div>
               </div>
 
               <p className="text-[12px] text-[#5C4033]/70 mt-2">{course.duration} • {course.schedule}</p>

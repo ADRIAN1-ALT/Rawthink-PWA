@@ -288,6 +288,8 @@ export default function App() {
               showNotification={showNotification}
             />
 
+            {/* Pricing section removed — using FeaturedWorkshops for enrollment UI */}
+
             {/* Curriculum Showcase Features list */}
             <InteractiveFeatures />
 
