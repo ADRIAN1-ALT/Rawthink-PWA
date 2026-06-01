@@ -12,9 +12,13 @@ interface FeaturedWorkshopsProps {
 export default function FeaturedWorkshops({ courses, currentUser, setView, showNotification }: FeaturedWorkshopsProps) {
   const visible = courses && courses.length > 0;
 
-  const handlePayNow = async (courseId: string) => {
+  const handlePayNow = (courseId: string) => {
+    // Use the manual eSewa QR flow: set intended course and redirect user
+    // to the courses view where they can upload a receipt screenshot.
+    sessionStorage.setItem('intended_enroll_course_id', courseId);
+
     if (!currentUser) {
-      showNotification('Please log in to enroll via eSewa.', 'info');
+      showNotification('Please sign in to submit eSewa receipt and enroll.', 'info');
       setView('auth');
       return;
     }
@@ -24,49 +28,8 @@ export default function FeaturedWorkshops({ courses, currentUser, setView, showN
       return;
     }
 
-    try {
-      const res = await fetch('/api/esewa/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id, courseId })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showNotification(data.error || 'Failed to start payment.', 'error');
-        return;
-      }
-
-      // Build and submit an HTML form to eSewa (UAT by default)
-      const esewaUrl = data.esewaUrl || 'https://uat.esewa.com.np/epay/main';
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = esewaUrl;
-      const fields: Record<string, string | number> = {
-        tAmt: data.tAmt || data.amount || 0,
-        amt: data.amount || 0,
-        txAmt: 0,
-        psc: 0,
-        pdc: 0,
-        pid: data.pid,
-        scd: data.scd || 'EPAYTEST',
-        su: data.su,
-        fu: data.fu
-      };
-
-      Object.entries(fields).forEach(([k, v]) => {
-        const inp = document.createElement('input');
-        inp.type = 'hidden';
-        inp.name = k;
-        inp.value = String(v);
-        form.appendChild(inp);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-    } catch (err) {
-      console.error('Checkout error', err);
-      showNotification('Payment failed. Try again later.', 'error');
-    }
+    setView('courses');
+    showNotification('Open the selected course and upload your eSewa receipt screenshot to complete enrollment.', 'info');
   };
 
   if (!visible) return null;
@@ -120,6 +83,15 @@ export default function FeaturedWorkshops({ courses, currentUser, setView, showN
                   >
                     Pay Now To Enroll
                   </button>
+
+                  <button
+                    onClick={() => setView('esewa-qr')}
+                    className="px-3 py-2 bg-white border border-[#F7F1E8] rounded-xl text-[#5C4033] text-sm flex items-center gap-2"
+                  >
+                    <span>How to Pay</span>
+                    <ArrowRight size={14} />
+                  </button>
+
                   <button
                     onClick={() => {
                       setView('courses');

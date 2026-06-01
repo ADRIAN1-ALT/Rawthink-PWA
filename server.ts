@@ -391,9 +391,9 @@ try {
 }
 
 // Express initialization
-async function startServer() {
+export async function createApp() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
 
   // Middlewares supporting base64 inputs securely
   app.use(express.json({ limit: '12mb' }));
@@ -1144,79 +1144,9 @@ RAWTHINK AI Support Team`
     res.json({ success: true, enrollment: newEnrollment, coins: user.coins, coinsInvested: user.coinsInvested });
   });
 
-  // ---------------- eSewa Quick Checkout Flow ----------------
-  app.post('/api/esewa/create', (req: Request, res: Response) => {
-    const { userId, courseId } = req.body;
-    if (!userId || !courseId) return res.status(400).json({ error: 'userId and courseId are required.' });
-
-    const db = readDB();
-    const user = db.users.find((u: User) => u.id === userId);
-    const course = db.courses.find((c: Course) => c.id === courseId);
-    if (!user || !course) return res.status(404).json({ error: 'User or course not found.' });
-
-    const pid = 'esewa-' + Math.random().toString(36).substring(2, 9);
-    const amount = course.price;
-    const tAmt = amount;
-    const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
-    const su = `${APP_URL}/api/esewa/success`;
-    const fu = `${APP_URL}/api/esewa/fail`;
-    const scd = process.env.ESEWA_MERCHANT_CODE || 'EPAYTEST';
-
-    if (!db.pendingPayments) db.pendingPayments = [];
-    db.pendingPayments.push({ pid, userId, courseId, amount, status: 'created', createdAt: new Date().toISOString() });
-    writeDB(db);
-
-    return res.json({ success: true, pid, amount, tAmt, scd, su, fu, esewaUrl: process.env.ESEWA_URL || 'https://uat.esewa.com.np/epay/main' });
-  });
-
-  app.get('/api/esewa/success', (req: Request, res: Response) => {
-    const pid = String(req.query.pid || '');
-    const db = readDB();
-    const rec = (db.pendingPayments || []).find((p: any) => p.pid === pid);
-
-    if (rec) {
-      rec.status = 'success';
-      const user = db.users.find((u: any) => u.id === rec.userId);
-      const course = db.courses.find((c: any) => c.id === rec.courseId);
-      if (user && course) {
-        const newEnrollment: Enrollment = {
-          id: 'en-' + Math.random().toString(36).substring(2, 9),
-          userId: user.id,
-          userName: user.name,
-          userEmail: user.email,
-          courseId: course.id,
-          courseTitle: course.title,
-          price: rec.amount,
-          transactionId: pid,
-          status: 'approved',
-          createdAt: new Date().toISOString()
-        };
-        db.enrollments.push(newEnrollment);
-        db.notifications.push({
-          id: 'notif-' + Math.random().toString(36).substring(2, 9),
-          userId: 'admin-1',
-          text: `💸 eSewa payment success: ${user.name} for ${course.title} (Rs. ${rec.amount})`,
-          isRead: false,
-          createdAt: new Date().toISOString()
-        });
-      }
-      writeDB(db);
-      return res.send(`<!doctype html><html><body><script>localStorage.setItem('rawthink_lastPayment', JSON.stringify({msg:'Payment successful. Enrollment recorded.', type:'success'}));window.location.href='/';</script></body></html>`);
-    }
-
-    return res.send(`<!doctype html><html><body><script>localStorage.setItem('rawthink_lastPayment', JSON.stringify({msg:'Payment completed (unverified).', type:'success'}));window.location.href='/';</script></body></html>`);
-  });
-
-  app.get('/api/esewa/fail', (req: Request, res: Response) => {
-    const pid = String(req.query.pid || '');
-    const db = readDB();
-    const rec = (db.pendingPayments || []).find((p: any) => p.pid === pid);
-    if (rec) {
-      rec.status = 'failed';
-      writeDB(db);
-    }
-    return res.send(`<!doctype html><html><body><script>localStorage.setItem('rawthink_lastPayment', JSON.stringify({msg:'Payment failed or cancelled', type:'error'}));window.location.href='/';</script></body></html>`);
-  });
+  // Removed direct eSewa gateway integration.
+  // Payment flow now uses manual QR screenshot submission via `/api/enroll`.
+  // External eSewa redirect endpoints were intentionally disabled to avoid direct gateway integration.
 
   // ---------------- FREE RESOURCE DOWNLOADS TRACKER ----------------
 
@@ -1976,6 +1906,45 @@ RAWTHINK AI Support Team`
     res.json({ success: true, enrollment });
   });
 
+  // ---------------- ADMIN: Upload Merchant QR Image ----------------
+  // Allows an admin to upload a base64 image (PNG/JPG) and saves it to /public
+  app.post('/api/admin/upload-qr', (req: Request, res: Response) => {
+    const { adminId, filename = 'esewa_qr.png', imageBase64 } = req.body;
+    if (!adminId || !imageBase64) {
+      return res.status(400).json({ error: 'adminId and imageBase64 are required.' });
+    }
+
+    const db = readDB();
+    const admin = db.users.find((u: User) => u.id === adminId);
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin authorization required.' });
+    }
+
+    try {
+      const cleanBase64 = (imageBase64 as string).replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(cleanBase64, 'base64');
+      const safeName = sanitizeStr(filename || 'esewa_qr.png');
+      const outPath = path.join(process.cwd(), 'public', safeName);
+      fs.writeFileSync(outPath, buffer);
+
+      // notify admin and persist
+      db.notifications = db.notifications || [];
+      db.notifications.push({
+        id: 'notif-' + Math.random().toString(36).substring(2, 9),
+        userId: admin.id,
+        text: `🖼️ Admin uploaded merchant QR image: ${safeName}`,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+
+      writeDB(db);
+      return res.json({ success: true, url: `/${safeName}` });
+    } catch (err) {
+      console.error('QR upload error', err);
+      return res.status(500).json({ error: 'Failed to save QR image.' });
+    }
+  });
+
   // Admin announcement broadcast
   app.post('/api/admin/announce', (req: Request, res: Response) => {
     const { adminId, title, content, pinned } = req.body;
@@ -2208,9 +2177,18 @@ RAWTHINK AI Support Team`
     });
   }
 
+  return app;
+}
+
+async function startServer() {
+  const app = await createApp();
+  const PORT = Number(process.env.PORT || 3000);
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[RAWTHINK AI Backend] Server successfully booted at http://localhost:${PORT}`);
   });
 }
 
-startServer();
+// Only start a long-running listener when not running on Vercel serverless environment
+if (!process.env.VERCEL) {
+  startServer();
+}

@@ -68,6 +68,9 @@ export default function AdminPanel({
   const [toolLink, setToolLink] = useState('');
   const [toolIconName, setToolIconName] = useState('Cpu');
   const [isSubmittingTool, setIsSubmittingTool] = useState(false);
+  // QR upload states for merchant QR image
+  const [qrFile, setQrFile] = useState<File | null>(null);
+  const [isUploadingQr, setIsUploadingQr] = useState(false);
 
   const fetchAdminStats = async () => {
     try {
@@ -122,6 +125,46 @@ export default function AdminPanel({
       }
     } catch (e: any) {
       showNotification(e.message || 'Verification decision submission failed.', 'error');
+    }
+  };
+
+  // QR upload helpers
+  const handleQrFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setQrFile(e.target.files[0]);
+    }
+  };
+
+  const uploadQrImage = async () => {
+    if (!qrFile) {
+      showNotification('Please choose an image file first.', 'error');
+      return;
+    }
+    setIsUploadingQr(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const resp = await fetch('/api/admin/upload-qr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId: currentUser?.id, filename: 'esewa_qr.png', imageBase64: dataUrl })
+        });
+
+        const res = await resp.json();
+        if (!resp.ok) throw new Error(res.error || 'Upload failed');
+        showNotification('Merchant QR uploaded successfully.', 'success');
+        setQrFile(null);
+      };
+
+      reader.onerror = () => {
+        showNotification('Failed to read the image file.', 'error');
+      };
+      reader.readAsDataURL(qrFile);
+    } catch (err: any) {
+      showNotification(err.message || 'Upload failed', 'error');
+    } finally {
+      setIsUploadingQr(false);
     }
   };
 
@@ -584,6 +627,18 @@ export default function AdminPanel({
         {activeSubTab === 'payments' && (
           <div className="bg-brand-white rounded-2xl border border-brand-primary/10 p-6 shadow-sm">
             <h3 className="font-display font-extrabold text-brand-dark text-base mb-4">eSewa Payments Screen-Proof Verification Queue</h3>
+            <div className="mb-4 flex items-center gap-3">
+              <input id="admin-qr-file" type="file" accept="image/*" onChange={handleQrFileChange} className="hidden" />
+              <label htmlFor="admin-qr-file" className="px-3 py-2 bg-white border border-brand-primary/10 rounded-xl text-xs cursor-pointer">Choose QR Image</label>
+              <span className="text-xs text-brand-dark/60">{qrFile ? qrFile.name : 'No file choosen'}</span>
+              <button
+                onClick={uploadQrImage}
+                disabled={!qrFile || isUploadingQr}
+                className="px-3 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold ml-3 disabled:opacity-60"
+              >
+                {isUploadingQr ? 'Uploading...' : 'Upload Merchant QR'}
+              </button>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">

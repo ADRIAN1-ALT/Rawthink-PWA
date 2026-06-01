@@ -747,7 +747,7 @@
       "userRole": "admin",
       "category": "announcement",
       "title": "Welcome to RAWTHINK AI Academy Nepal! 🇳🇵",
-      "content": "We are thrilled to launch this premium digital AI community. Our courses utilize interactive live screens, eSewa verified digital gateways, certificates issuing dashboards, and custom prompt libraries. Jump into the Resources center to grab free guidelines today! Join the discussions, ask questions, or practice prompts here on this forum.",
+      "content": "We are thrilled to launch this premium digital AI community. Our courses utilize interactive live screens, manual eSewa QR screenshot verification for enrollments, certificates issuing dashboards, and custom prompt libraries. Jump into the Resources center to grab free guidelines today! Join the discussions, ask questions, or practice prompts here on this forum.",
       "likes": 24,
       "comments": [
         {
@@ -785,7 +785,7 @@
     {
       "id": "notif-r6njapm",
       "userId": "admin-1",
-      "text": "💸 Pending eSewa payment submitted by student sharma for AI Foundations Bootcamp (Rs. 299)",
+      "text": "💸 Pending payment (QR screenshot) submitted by student sharma for AI Foundations Bootcamp (Rs. 299)",
       "isRead": false,
       "createdAt": "2026-06-01T01:04:25.022Z"
     },
@@ -804,7 +804,16 @@
       "createdAt": "2026-06-01T01:26:17.843Z"
     }
   ],
-  "pendingPayments": [],
+  "pendingPayments": [
+    {
+      "pid": "manual-hfq3off",
+      "userId": "student-demo",
+      "courseId": "course-2",
+      "amount": 349,
+      "status": "created",
+      "createdAt": "2026-06-01T03:03:10.774Z"
+    }
+  ],
   "sentMailsLog": [
     {
       "id": "mail-m2vq6l1",

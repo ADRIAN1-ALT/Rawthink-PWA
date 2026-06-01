@@ -12,6 +12,7 @@ import CommunityBoard from './components/CommunityBoard';
 import AuthScreens from './components/AuthScreens';
 import UserDashboard from './components/UserDashboard';
 import AdminPanel from './components/AdminPanel';
+import EsEwaGuide from './components/EsEwaGuide';
 import { 
   Sparkles, Award, Star, ShieldAlert, CheckCircle, Info, 
   MapPin, Heart, BookOpen, Clock 
@@ -403,6 +404,17 @@ export default function App() {
           </div>
         )}
 
+        {/* VIEW: ESEWA QR GUIDE */}
+        {currentView === 'esewa-qr' && (
+          <div className="animate-fadeIn">
+            <EsEwaGuide
+              currentUser={currentUser}
+              setView={setView}
+              showNotification={showNotification}
+            />
+          </div>
+        )}
+
         {/* VIEW: TOOLS DIRECTORY */}
         {currentView === 'tools' && (
           <div className="animate-fadeIn">
@@ -555,9 +567,9 @@ export default function App() {
       {/* Bottom PWA Bar Representation matching the Sleek design theme */}
       <div className="px-8 py-4 bg-[#F7F1E8] border-t border-[#F7F1E8] flex items-center justify-between text-[10px] font-extrabold uppercase tracking-widest text-[#5C4033]">
         <div className="flex gap-6 opacity-65">
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 cursor-pointer" onClick={() => setView('esewa-qr')}>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
-            eSewa Ready
+            eSewa QR (Upload Screenshot)
           </span>
           <span className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#C19A6B]"></span> 

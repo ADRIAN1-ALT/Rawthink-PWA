@@ -323,6 +323,14 @@ export default function CourseCatalog({
                       <span>Buy with {course.price} Coins</span>
                     </button>
                   )}
+                  {!isPurchased && (
+                    <button
+                      onClick={() => setView('esewa-qr')}
+                      className="w-full mt-3 text-center py-2 bg-white text-brand-primary rounded-xl text-xs font-bold border border-brand-primary/10"
+                    >
+                      How to Pay (QR Guide)
+                    </button>
+                  )}
                 </div>
 
               </div>
@@ -379,8 +387,11 @@ export default function CourseCatalog({
                       </div>
                       
                       <div className="relative overflow-hidden rounded-2xl shadow-lg border-2 border-[#192026]/10 bg-[#192026] p-1 transition-all hover:scale-[1.02] duration-300">
-                        {/* New high-precision vector QR code matching the uploaded image */}
-                        <img src="/esewa_qr.svg" alt="eSewa QR Code" className="w-44 h-44 mx-auto object-contain rounded-xl" />
+                        {/* New high-precision merchant QR: prefer PNG if uploaded, SVG fallback */}
+                        <picture>
+                          <source srcSet="/esewa_qr.png" type="image/png" />
+                          <img src="/esewa_qr.svg" alt="eSewa QR Code" className="w-44 h-44 mx-auto object-contain rounded-xl" />
+                        </picture>
                       </div>
 
                       <div className="mt-2.5">
