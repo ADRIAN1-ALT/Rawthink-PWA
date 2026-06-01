@@ -1,0 +1,24 @@
+{
+  "name": "RAWTHINK AI - Premium EdTech Community",
+  "short_name": "RAWTHINK AI",
+  "description": "Learn AI. Build Faster. Stay Ahead. The premium AI learning platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#F7F1E8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192' width='192' height='192'><rect width='192' height='192' rx='40' fill='%235C4033'/><circle cx='96' cy='96' r='60' fill='%23C19A6B'/><path d='M75 125 L96 70 L117 125 M85 102 L107 102' stroke='%23F7F1E8' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='110' fill='%235C4033'/><circle cx='256' cy='256' r='160' fill='%23C19A6B'/><path d='M200 340 L256 190 L312 340 M225 280 L287 280' stroke='%23F7F1E8' stroke-width='18' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
