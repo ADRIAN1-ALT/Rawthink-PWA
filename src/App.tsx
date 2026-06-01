@@ -533,9 +533,10 @@ export default function App() {
           <div className="md:col-span-3 space-y-3.5">
             <h4 className="font-display font-black tracking-widest text-[#C19A6B] uppercase text-[10px]">Academic Divisions</h4>
             <div className="space-y-2 text-xs text-brand-cream/80 font-medium">
-              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Foundations Bootcamp</p>
-              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Productivity Workshop</p>
-              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Development Masterclass</p>
+              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Quick Start</p>
+              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Creator Bootcamp</p>
+              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Business Builder</p>
+              <p className="hover:text-brand-primary transition cursor-pointer" onClick={() => setView('courses')}>AI Entrepreneur Accelerator</p>
             </div>
           </div>
 

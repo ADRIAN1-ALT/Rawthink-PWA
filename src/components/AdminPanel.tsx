@@ -44,7 +44,7 @@ export default function AdminPanel({
 
   // Manual Certificate Issuer state
   const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [selectedCertWorkshop, setSelectedCertWorkshop] = useState('AI Foundations Bootcamp');
+  const [selectedCertWorkshop, setSelectedCertWorkshop] = useState('AI Quick Start');
 
   // Active view tabs of Admin panel
   const [activeSubTab, setActiveSubTab] = useState<'analytics' | 'payments' | 'classes' | 'announcements' | 'exporter' | 'tools'>('analytics');
@@ -565,7 +565,7 @@ export default function AdminPanel({
                 {/* Visual grid representing revenue bars and conversions */}
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between font-mono">
-                    <span>Course 1 (AI Foundations Rs. 299):</span>
+                    <span>Course 1 (AI Quick Start Rs. 199):</span>
                     <span className="font-bold">{enrollments.filter(e => e.courseId === 'course-1' && e.status === 'approved').length} Active Admissions</span>
                   </div>
                   <div className="w-full h-2.5 bg-brand-cream rounded-full overflow-hidden">
@@ -578,7 +578,7 @@ export default function AdminPanel({
 
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between font-mono">
-                    <span>Course 2 (AI Productivity Rs. 349):</span>
+                    <span>Course 2 (AI Creator Bootcamp Rs. 599):</span>
                     <span className="font-bold">{enrollments.filter(e => e.courseId === 'course-2' && e.status === 'approved').length} Active Admissions</span>
                   </div>
                   <div className="w-full h-2.5 bg-brand-cream rounded-full overflow-hidden">
@@ -591,7 +591,7 @@ export default function AdminPanel({
 
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between font-mono">
-                    <span>Course 3 (Developer Masterclass Rs. 599):</span>
+                    <span>Course 3 (AI Business Builder Rs. 1499):</span>
                     <span className="font-bold">{enrollments.filter(e => e.courseId === 'course-3' && e.status === 'approved').length} Active Admissions</span>
                   </div>
                   <div className="w-full h-2.5 bg-brand-cream rounded-full overflow-hidden">
@@ -882,9 +882,10 @@ export default function AdminPanel({
                   onChange={(e) => setSelectedCertWorkshop(e.target.value)}
                   className="w-full px-3 py-2.5 bg-brand-cream/15 border border-brand-primary/20 rounded-xl text-xs font-semibold focus:outline-none text-brand-dark"
                 >
-                  <option value="AI Foundations Bootcamp">AI Foundations Bootcamp (NPR 5,000)</option>
-                  <option value="AI Productivity Workshop">AI Productivity Workshop (NPR 7,500)</option>
-                  <option value="AI Dev & Automation Masterclass">AI Dev & Automation Masterclass (NPR 15,000)</option>
+                  <option value="AI Quick Start">AI Quick Start (NPR 199)</option>
+                  <option value="AI Creator Bootcamp">AI Creator Bootcamp (NPR 599)</option>
+                  <option value="AI Business Builder">AI Business Builder (NPR 1499)</option>
+                  <option value="AI Entrepreneur Accelerator">AI Entrepreneur Accelerator (NPR 4999)</option>
                 </select>
               </div>
 

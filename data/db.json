@@ -247,67 +247,87 @@
   "courses": [
     {
       "id": "course-1",
-      "title": "AI Foundations Bootcamp",
-      "price": 299,
+      "title": "AI Quick Start",
+      "price": 199,
       "duration": "1 Hour",
       "features": [
-        "AI Basics & Evolution",
-        "Introduction to ChatGPT & Modern LLMs",
-        "Prompting Fundamentals & Structure",
-        "AI Advantages in Daily Workflows",
-        "AI Limitations & Hallucinations",
-        "Interactive Live Q&A Session"
+        "Module 1: AI Foundations — What is AI?; ChatGPT Basics; AI Myths vs Reality; Best Free AI Tools",
+        "Module 2: AI for Daily Life — Homework; Presentations; Email Writing; Notes Summarization",
+        "Module 3: Prompting Basics — The 5 prompt formula; Ready-made prompts"
       ],
       "bonuses": [
-        "AI Starter Guide PDF",
-        "Premium Beginner Prompt Pack",
-        "Official RAWTHINK AI Certificate"
+        "50 AI Prompts PDF",
+        "Certificate"
       ],
       "schedule": "Every Saturday, 2:00 PM - 3:00 PM NPT"
     },
     {
       "id": "course-2",
-      "title": "AI Productivity Workshop",
-      "price": 349,
+      "title": "AI Creator Bootcamp",
+      "price": 599,
       "duration": "2 Hours",
       "badge": "Limited Seats",
       "features": [
-        "Advanced System Role Prompting",
-        "AI for Academic Studies & Research",
-        "AI for Automated Presentation Writing",
-        "Personal Productivity Systems & Dashboards",
-        "Practical Live Exercises & Code Generation",
-        "Visual Asset Design with AI Canvas"
+        "Everything in Tier 1",
+        "Module 1: AI Content Creation — Social media posts; Reels scripts; Captions",
+        "Module 2: AI Image Generation — Posters; Logos; Thumbnails",
+        "Module 3: AI Music Creation — Generate songs; Lyrics writing; Background music; Music for YouTube",
+        "Module 4: AI Video Creation — Shorts; Reels; Faceless videos"
       ],
       "bonuses": [
-        "100+ Masterclass Prompt Templates",
-        "AI Toolkit Cheat Sheet",
-        "Direct Lifetime Recording Access",
-        "Official Completion Certificate"
+        "Creator Toolkit",
+        "100 Prompt Templates",
+        "Certificate"
       ],
       "schedule": "Every Sunday, 11:00 AM - 1:00 PM NPT"
     },
     {
       "id": "course-3",
-      "title": "AI Development & Automation Masterclass",
-      "price": 599,
+      "title": "AI Business Builder",
+      "price": 1499,
       "duration": "3 Hours",
       "badge": "Most Popular",
       "features": [
-        "Integrating AI APIs inside Developer projects",
-        "Building Automated Workflows & Orchestrators",
-        "AI Assistants, Autonomous Agents, & Web Scraping",
-        "Solving Real-world Business Use Cases with AI",
-        "Full Practical Projects From Scratch (Coded Live)",
-        "Connecting Frontend Apps securely to Backend AI Nodes"
+        "Everything in Tier 1 & 2",
+        "Module 1: Sellable Website Building — Build websites without coding; AI website generators; Deploy websites online",
+        "Module 2: AI Freelancing — Fiverr; Upwork; Portfolio creation",
+        "Module 3: AI Automation — Forms; Email automation; Lead capture",
+        "Module 4: AI Marketing — Ads; Content strategy; Lead generation",
+        "Module 5: Client Acquisition — Outreach; Proposal writing",
+        "Project: Personal website & AI-generated content portfolio"
       ],
       "bonuses": [
-        "Developer Project Templates Archive",
-        "Raw Premium Developers Prompt Library",
-        "Exclusive RAWTHINK Discord VIP Channel",
-        "Vetted Digital Career Certificate"
+        "Business Templates",
+        "Project Review",
+        "Certificate"
       ],
       "schedule": "Every Wednesday, 6:00 PM - 9:00 PM NPT"
+    },
+    {
+      "id": "course-4",
+      "title": "AI Entrepreneur Accelerator",
+      "price": 4999,
+      "duration": "4 Hours",
+      "badge": "Premium",
+      "features": [
+        "Everything in previous tiers",
+        "Module 1: AI Business Systems",
+        "Module 2: Advanced Automation",
+        "Module 3: AI Agency Blueprint",
+        "Module 4: AI Music Monetization",
+        "Module 5: AI Website Agency",
+        "Module 6: Personal Branding",
+        "Module 7: Sales & Pitching",
+        "Module 8: Launch Your First AI Venture",
+        "Final Project: Launch website; AI Brand; AI Music Project; Lead Generation System"
+      ],
+      "bonuses": [
+        "Private Community",
+        "Templates",
+        "Business Resources",
+        "Premium Certificate"
+      ],
+      "schedule": "Every Friday, 5:00 PM - 9:00 PM NPT"
     }
   ],
   "enrollments": [

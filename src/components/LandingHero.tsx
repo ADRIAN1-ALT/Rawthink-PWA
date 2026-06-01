@@ -113,8 +113,8 @@ export default function LandingHero({ setView, onDownloadClick }: LandingHeroPro
             </div>
             <div className="flex-grow min-w-0">
               <div className="flex justify-between items-start gap-1">
-                <h3 className="font-bold text-sm sm:text-base text-[#5C4033] truncate">AI Foundations Bootcamp</h3>
-                <span className="text-xs sm:text-sm font-bold text-[#C19A6B] shrink-0">Rs. 299</span>
+                <h3 className="font-bold text-sm sm:text-base text-[#5C4033] truncate">AI Quick Start</h3>
+                <span className="text-xs sm:text-sm font-bold text-[#C19A6B] shrink-0">Rs. 199</span>
               </div>
               <p className="text-xs text-[#5C4033]/70 mb-2 truncate">1 Hour • AI Basics, ChatGPT, Prompting</p>
               <div className="flex gap-1.5">
@@ -141,11 +141,11 @@ export default function LandingHero({ setView, onDownloadClick }: LandingHeroPro
               ⚡
             </div>
             <div className="flex-grow min-w-0">
-              <div className="flex justify-between items-start gap-1">
-                <h3 className="font-bold text-sm sm:text-base text-[#5C4033] truncate">Productivity Masterclass</h3>
-                <span className="text-xs sm:text-sm font-bold text-[#5C4033] shrink-0">Rs. 349</span>
+                <div className="flex justify-between items-start gap-1">
+                <h3 className="font-bold text-sm sm:text-base text-[#5C4033] truncate">AI Creator Bootcamp</h3>
+                <span className="text-xs sm:text-sm font-bold text-[#5C4033] shrink-0">Rs. 599</span>
               </div>
-              <p className="text-xs text-[#5C4033]/70 mb-2 truncate">2 Hours • Advanced Prompting & Systems</p>
+              <p className="text-xs text-[#5C4033]/70 mb-2 truncate">2 Hours • Content, Images, Music & Video</p>
               <div className="flex gap-1.5">
                 <span className="bg-white text-[9px] px-2 py-0.5 rounded-full uppercase font-bold text-[#5C4033]/85">100+ Templates</span>
               </div>
